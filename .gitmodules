@@ -1,0 +1,3 @@
+[submodule "modules/JLib"]
+	path = modules/JLib
+	url = https://github.com/jawdan-dev/JLib

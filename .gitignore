@@ -1,0 +1,6 @@
+# CMake.
+binaries/
+build/
+
+# IDE.
+.vscode/
