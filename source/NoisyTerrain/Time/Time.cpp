@@ -1,5 +1,7 @@
 #include "Time.hpp"
 
+J_SINGLETON_DEF(TimeManager);
+
 TimeManager::TimeManager() :
 	m_last(0), m_now(0), m_delta(0) {}
 TimeManager::~TimeManager() {}

@@ -1,5 +1,7 @@
 #include "Input.hpp"
 
+J_SINGLETON_DEF(InputManager);
+
 InputManager::InputManager() :
 	m_mouseX(0), m_mouseY(0), m_mouseScrollX(0), m_mouseScrollY(0),
 	m_keyDown(), m_keyRepeat(), m_keyPressed(), m_keyUp(),

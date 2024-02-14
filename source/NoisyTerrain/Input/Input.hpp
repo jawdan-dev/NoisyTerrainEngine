@@ -2,6 +2,9 @@
 #include <NoisyTerrain/Core/Core.hpp>
 
 class InputManager {
+	J_SINGLETON(InputManager)
+#	define Input J_SINGLETON_GET(InputManager)
+
 private:
 	int m_mouseX, m_mouseY, m_mouseScrollX, m_mouseScrollY;
 	Set<GLenum>
@@ -36,6 +39,3 @@ public:
 	void setMousePosition(const int x, const int y);
 	void setMouseScroll(const int x, const int y);
 };
-
-J_SINGLETON(InputManager)
-#define Input J_SINGLETON_GET(InputManager)

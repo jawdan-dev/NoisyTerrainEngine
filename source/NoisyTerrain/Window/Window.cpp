@@ -1,6 +1,11 @@
 #include "Window.hpp"
 
-WindowManager::WindowManager() {
+J_SINGLETON_DEF(WindowManager);
+
+WindowManager::WindowManager() :
+	m_window(nullptr),
+	m_x(0), m_y(0), m_width(0), m_height(0),
+	m_time(), m_input(), m_entityManager() {
 	// GLFW init.
 	if (!glfwInit()) J_ERROR_EXIT("Window.cpp: Failed to initialize window.\n");
 
@@ -71,21 +76,19 @@ const bool WindowManager::process() {
 
 	// Bind singletons.
 	J_SINGLETON_SET(WindowManager, this);
+	J_SINGLETON_SET(TimeManager, &m_time);
 	J_SINGLETON_SET(InputManager, &m_input);
 
 	// Set context.
 	glfwMakeContextCurrent(m_window);
 
 	// Clear buffer.
-	// TODO: Draw reset.
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// Handle entities.
 	m_entityManager.processAll();
 	m_entityManager.drawAll();
 
 	// Draw.
-	// TODO: Draw draw.
 
 	// Swap buffers.
 	glfwSwapBuffers(m_window);

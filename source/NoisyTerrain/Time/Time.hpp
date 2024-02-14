@@ -2,6 +2,9 @@
 #include <NoisyTerrain/Core/Core.hpp>
 
 class TimeManager {
+	J_SINGLETON(TimeManager)
+#	define Time J_SINGLETON_GET(TimeManager)
+
 private:
 	float m_last, m_now, m_delta;
 
@@ -17,8 +20,3 @@ public:
 public:
 	void updateTime();
 };
-
-J_SINGLETON(TimeManager)
-#define Time J_SINGLETON_GET(TimeManager)
-
-

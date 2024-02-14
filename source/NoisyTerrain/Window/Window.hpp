@@ -3,17 +3,20 @@
 
 #include <NoisyTerrain/Time/Time.hpp>
 #include <NoisyTerrain/Input/Input.hpp>
+#include <NoisyTerrain/Draw/Draw.hpp>
 
 #include <NoisyTerrain/Entity/EntityManager.hpp>
 
 class WindowManager {
+	J_SINGLETON(WindowManager)
+#	define Window J_SINGLETON_GET(WindowManager)
+
 private:
 	GLFWwindow* m_window;
 	int m_x, m_y, m_width, m_height;
 
 	TimeManager m_time;
 	InputManager m_input;
-
 	EntityManager m_entityManager;
 
 public:
@@ -35,6 +38,3 @@ public:
 public:
 	const bool process();
 };
-
-J_SINGLETON(WindowManager)
-#define Window J_SINGLETON_GET(WindowManager)
