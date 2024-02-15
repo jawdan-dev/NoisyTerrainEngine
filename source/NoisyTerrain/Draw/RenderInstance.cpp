@@ -94,16 +94,22 @@ void RenderInstance::draw(const Matrix4& viewProjection) {
 				// Ignore non-used static.
 				const void* offset = (void*)(attribute.m_isStatic ? 0 : attribute.m_dataOffset);
 				if (attribute.m_isStatic) {
-					if (m_mesh->getVerticesEnabled() && attribute.m_name != "v_position") {
-						offset += sizeof(Vector3);
-						if (m_mesh->getColorsEnabled() && attribute.m_name != "v_color") {
-							offset += sizeof(Vector3);
-							if (m_mesh->getUVsEnabled() && attribute.m_name != "v_uv") {
-								//offset += sizeof(Vector2);
-								continue;
-							}
-						}
-					}
+					if ((!m_mesh->getVerticesEnabled() && attribute.m_name == "v_position") ||
+						(!m_mesh->getColorsEnabled() && attribute.m_name == "v_color") ||
+						(!m_mesh->getUVsEnabled() && attribute.m_name == "v_uv")) continue;
+
+					bool found = false;
+					if (!found && m_mesh->getVerticesEnabled())
+						if (attribute.m_name == "v_position") found = true;
+						else offset += sizeof(Vector3);
+					if (!found && m_mesh->getColorsEnabled())
+						if (attribute.m_name == "v_color") found = true;
+						else offset += sizeof(Vector3);
+					if (!found && m_mesh->getUVsEnabled())
+						if (attribute.m_name == "v_uv") found = true;
+						else offset += sizeof(Vector2);
+
+					if (!found) continue;
 				}
 
 				// Bind buffer.
@@ -154,7 +160,7 @@ void RenderInstance::draw(const Matrix4& viewProjection) {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_mesh->getEBO());
 		glDrawElementsInstanced(
 			GL_TRIANGLES,
-			m_mesh->getRenderCount(), GL_UNSIGNED_SHORT, nullptr,
+			m_mesh->getRenderCount(), GL_UNSIGNED_INT, nullptr,
 			m_instanceCount
 		);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
