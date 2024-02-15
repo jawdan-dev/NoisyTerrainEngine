@@ -6,7 +6,12 @@ DrawManager::DrawManager() :
 	m_projection(), m_view(),
 	m_viewProjection(),
 	m_renderInstances() {}
-DrawManager::~DrawManager() {}
+DrawManager::~DrawManager() {
+	// Cleanup.
+	for (auto it = m_renderInstances.begin(); it != m_renderInstances.end(); it++)
+		delete it->second;
+	m_renderInstances.clear();
+}
 
 void DrawManager::updateViewProjection() {
 	// MVP -> (P * V) * M.
@@ -24,7 +29,6 @@ void DrawManager::clear() {
 			// Remove render instance.
 			delete it->second;
 			it = m_renderInstances.erase(it);
-			printf("Removed render instance.\n");
 			continue;
 		}
 
@@ -51,7 +55,6 @@ void DrawManager::draw(Mesh& mesh, InstanceData& instanceData, const bool isStat
 	if (it == m_renderInstances.end()) {
 		// Create render instance.
 		it = m_renderInstances.emplace(key, new RenderInstance(key.first, key.second)).first;
-		printf("Created render instance.\n");
 	}
 
 	// Insert instance.

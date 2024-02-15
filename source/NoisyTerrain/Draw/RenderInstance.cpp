@@ -78,15 +78,12 @@ void RenderInstance::draw(const Matrix4& viewProjection) {
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 		if (!m_vao) {
-			printf("Creating render VAO + iVBO.\n");
-
 			// Create VAO.
 			glGenVertexArrays(1, &m_vao);
 			glBindVertexArray(m_vao);
 
 			// Get mesh size.
 			size_t staticOffset = 0;
-			printf("0 < %i, %i, and %i?\n", m_vao, m_mesh->getVBO(), m_ivbo);
 
 			// Set attributes.
 			const List<ShaderAttribute> attributes = m_shader->getAttributes();
