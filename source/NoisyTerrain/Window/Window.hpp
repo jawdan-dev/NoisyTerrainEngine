@@ -17,6 +17,7 @@ private:
 
 	TimeManager m_time;
 	InputManager m_input;
+	DrawManager m_draw;
 	EntityManager m_entityManager;
 
 public:
@@ -33,6 +34,7 @@ public:
 
 	J_GETTER_DIRECT_MUT(getTimeManager, &m_time, TimeManager* const);
 	J_GETTER_DIRECT_MUT(getInputManager, &m_input, InputManager* const);
+	J_GETTER_DIRECT_MUT(getDrawManager, &m_draw, DrawManager* const);
 	J_GETTER_DIRECT_MUT(getEntityManager, &m_entityManager, EntityManager* const);
 
 public:

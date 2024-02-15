@@ -5,18 +5,24 @@ J_SINGLETON_DEF(WindowManager);
 WindowManager::WindowManager() :
 	m_window(nullptr),
 	m_x(0), m_y(0), m_width(0), m_height(0),
-	m_time(), m_input(), m_entityManager() {
+	m_time(), m_input(), m_draw(), m_entityManager() {
 	// GLFW init.
 	if (!glfwInit()) J_ERROR_EXIT("Window.cpp: Failed to initialize window.\n");
 
-	// Set GL hints.
+	// GL hints.
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+
+	// Window Hints.
+	glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
 	// Create window.
 	m_window = glfwCreateWindow(640, 360, "...", NULL, NULL);
 	if (m_window == nullptr) J_ERROR_EXIT("Window.cpp: Failed to initialize window.\n");
 	glfwMakeContextCurrent(m_window);
+
+	// Reset Hints.
+	glfwDefaultWindowHints();
 
 	// Initialize GLEW.
 	glewExperimental = GL_TRUE;
@@ -25,6 +31,14 @@ WindowManager::WindowManager() :
 	// Get information.
 	glfwGetWindowPos(m_window, &m_x, &m_y);
 	glfwGetWindowSize(m_window, &m_width, &m_height);
+
+	// Set config.
+	glfwSwapInterval(1);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glFrontFace(GL_CW);
 
 	// Set callbacks.
 #pragma region callbacks
@@ -40,6 +54,8 @@ WindowManager::WindowManager() :
 		WindowManager* const window = (WindowManager*)glfwGetWindowUserPointer(_);
 		window->m_width = width;
 		window->m_height = height;
+		glfwMakeContextCurrent(_);
+		glViewport(0, 0, width, height);
 		});
 
 	glfwSetKeyCallback(m_window, [](GLFWwindow* const _, const int key, const int scancode, const int action, const int mods) {
@@ -60,6 +76,9 @@ WindowManager::WindowManager() :
 		});
 
 #pragma endregion
+
+	// Show window.
+	glfwShowWindow(m_window);
 }
 WindowManager::~WindowManager() {
 	// Delete window.
@@ -78,17 +97,23 @@ const bool WindowManager::process() {
 	J_SINGLETON_SET(WindowManager, this);
 	J_SINGLETON_SET(TimeManager, &m_time);
 	J_SINGLETON_SET(InputManager, &m_input);
+	J_SINGLETON_SET(DrawManager, &m_draw);
 
 	// Set context.
 	glfwMakeContextCurrent(m_window);
 
+	// Update time.
+	m_time.updateTime();
+
 	// Clear buffer.
+	m_draw.clear();
 
 	// Handle entities.
 	m_entityManager.processAll();
 	m_entityManager.drawAll();
 
 	// Draw.
+	m_draw.drawAll();
 
 	// Swap buffers.
 	glfwSwapBuffers(m_window);
