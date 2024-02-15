@@ -1,7 +1,6 @@
-#include <NoisyTerrain/Core/Core.hpp>
+#include <NoisyTerrain/NoisyTerrain.hpp>
 
-#include <NoisyTerrain/Entity/Entity.hpp>
-#include <NoisyTerrain/Window/Window.hpp>
+#include <Entities/TestEntity.hpp>
 
 int main() {
 	printf("Wassup, 'Matrix.\n");
