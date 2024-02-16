@@ -60,7 +60,7 @@ void RenderInstance::addInstance(InstanceData& instanceData, const bool isStatic
 }
 
 void RenderInstance::draw(const Matrix4& viewProjection) {
-	if (this == nullptr || m_instanceCount <= 0 || m_mesh->getRenderCount() <= 0) return;
+	if (this == nullptr || m_instanceCount <= 0 || m_mesh->getRenderCount() <= 0 || m_mesh->getVBO() <= 0) return;
 
 	// Check if instances have been updated.
 	if (m_instancesUpdated) {
@@ -82,9 +82,6 @@ void RenderInstance::draw(const Matrix4& viewProjection) {
 			glGenVertexArrays(1, &m_vao);
 			glBindVertexArray(m_vao);
 
-			// Get mesh size.
-			size_t staticOffset = 0;
-
 			// Set attributes.
 			const List<ShaderAttribute> attributes = m_shader->getAttributes();
 			for (size_t i = 0; i < attributes.size(); i++) {
@@ -94,22 +91,10 @@ void RenderInstance::draw(const Matrix4& viewProjection) {
 				// Ignore non-used static.
 				const void* offset = (void*)(attribute.m_isStatic ? 0 : attribute.m_dataOffset);
 				if (attribute.m_isStatic) {
-					if ((!m_mesh->getVerticesEnabled() && attribute.m_name == "v_position") ||
-						(!m_mesh->getColorsEnabled() && attribute.m_name == "v_color") ||
-						(!m_mesh->getUVsEnabled() && attribute.m_name == "v_uv")) continue;
-
-					bool found = false;
-					if (!found && m_mesh->getVerticesEnabled())
-						if (attribute.m_name == "v_position") found = true;
-						else offset += sizeof(Vector3);
-					if (!found && m_mesh->getColorsEnabled())
-						if (attribute.m_name == "v_color") found = true;
-						else offset += sizeof(Vector3);
-					if (!found && m_mesh->getUVsEnabled())
-						if (attribute.m_name == "v_uv") found = true;
-						else offset += sizeof(Vector2);
-
-					if (!found) continue;
+					// Get static offset.
+					const size_t staticOffset = m_mesh->getActiveOffset(attribute.m_name);
+					if (staticOffset == -1) continue;
+					offset = (void*)staticOffset;
 				}
 
 				// Bind buffer.
@@ -119,7 +104,7 @@ void RenderInstance::draw(const Matrix4& viewProjection) {
 				// Get attribute information.
 				const uint16_t elementCount = glGetTypeElementCount(attribute.m_glType);
 				const GLenum type = glGetTypeBase(attribute.m_glType);
-				const size_t stride = attribute.m_isStatic ? m_mesh->getStaticSize() : m_shader->getTotalInstanceSize();
+				const size_t stride = attribute.m_isStatic ? m_mesh->getActiveStaticStride() : m_shader->getTotalInstanceSize();
 				const uint8_t divisor = attribute.m_isStatic ? 0 : 1;
 
 				// Set attribute information.
@@ -131,10 +116,6 @@ void RenderInstance::draw(const Matrix4& viewProjection) {
 				);
 				glVertexAttribDivisor(attribute.m_location, divisor);
 				glEnableVertexAttribArray(attribute.m_location);
-
-				// Update details.
-				if (attribute.m_isStatic)
-					staticOffset += glGetTypeByteSize(attribute.m_glType);
 			}
 
 			// Unbind VAO.

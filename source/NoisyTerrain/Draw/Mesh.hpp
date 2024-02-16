@@ -1,20 +1,19 @@
 #pragma once
 #include <NoisyTerrain/Core/Core.hpp>
 
-#include <NoisyTerrain/Draw/Shader.hpp>
+#include <NoisyTerrain/Draw/StaticData.hpp>
 
 class Mesh {
 private:
-	GLuint m_modelBuffer, m_elementBuffer;
-	List<Vector3> m_vertices, m_colors;
-	List<Vector2> m_uvs;
+	Map<String, StaticData> m_data;
 	List<uint32_t> m_indices;
 
-	size_t m_renderCount;
-	bool m_verticesEnabled : 1,
-		m_colorsEnabled : 1,
-		m_uvsEnabled : 1,
-		m_indicesEnabled : 1;
+private:
+	GLuint m_modelBuffer, m_elementBuffer;
+
+	bool m_indicesEnabled;
+	size_t m_renderCount, m_activeStaticStride;
+	Map<String, size_t> m_activeOffsets;
 
 public:
 	Mesh();
@@ -24,21 +23,22 @@ public:
 public:
 	J_GETTER_DIRECT(getVBO, m_modelBuffer, GLuint);
 	J_GETTER_DIRECT(getEBO, m_elementBuffer, GLuint);
-	J_GETTER_DIRECT(getStaticSize, (m_verticesEnabled ? sizeof(Vector3) : 0) + (m_colorsEnabled ? sizeof(Vector3) : 0) + (m_uvsEnabled ? sizeof(Vector2) : 0), size_t);
 	J_GETTER_DIRECT(getRenderCount, m_renderCount, size_t);
-	J_GETTER_DIRECT(getVerticesEnabled, m_verticesEnabled, bool);
-	J_GETTER_DIRECT(getColorsEnabled, m_colorsEnabled, bool);
-	J_GETTER_DIRECT(getUVsEnabled, m_uvsEnabled, bool);
+	J_GETTER_DIRECT(getActiveStaticStride, m_activeStaticStride, size_t);
 	J_GETTER_DIRECT(getIndicesEnabled, m_indicesEnabled, bool);
+	const size_t getActiveOffset(const String& staticName) const;
 
 public:
 	void load(const char* file);
 	void clear();
 
 public:
-	J_SETTER_DIRECT(setVertices, const List<Vector3>& vertices, m_vertices = vertices);
-	J_SETTER_DIRECT(setColors, const List<Vector3>& colors, m_colors = colors);
-	J_SETTER_DIRECT(setUVs, const List<Vector2>& uvs, m_uvs = uvs);
-	J_SETTER_DIRECT(setIndices, const List<uint32_t>& indices, m_indices = indices);
+	template <typename T>
+	void set(const String& staticName, const List<T>& data);
+	void set(const String& staticName, const void* const data, const size_t dataLength, const size_t dataStride);
+	J_SETTER_DIRECT(setIndices, const List<uint32_t>& indices, m_indices = indices;);
+
 	void commit();
 };
+
+#include "Mesh.ipp"

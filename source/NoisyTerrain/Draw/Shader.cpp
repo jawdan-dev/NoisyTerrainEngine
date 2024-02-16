@@ -180,13 +180,6 @@ void loadShaderAttributes(
 	instanceTotalSize = 0;
 	staticTotalSize = 0;
 
-	// Static attributes.
-	const char* staticAttributes[] = {
-		"v_position",
-		"v_color",
-		"v_uv",
-	};
-
 	// Get attributes information.
 	GLint attributeCount, maxNameSize;
 	glGetProgramiv(shaderProgram, GL_ACTIVE_ATTRIBUTES, &attributeCount);
@@ -211,12 +204,10 @@ void loadShaderAttributes(
 		attributeLocation = glGetAttribLocation(shaderProgram, nameBuffer);
 
 		// Check if attribute is internal.
-		bool staticAttribute = false;
-		for (size_t i = 0; i < sizeof(staticAttributes) / sizeof(*staticAttributes); i++) {
-			if (strcmp(staticAttributes[i], nameBuffer) != 0) continue;
-			staticAttribute = true;
-			break;
-		}
+		bool staticAttribute =
+			nameLength >= 2 &&
+			nameBuffer[0] == 'v' &&
+			nameBuffer[1] == '_';
 
 		// Add to attribute list.
 		attributes.emplace(
