@@ -46,11 +46,11 @@ void DrawManager::drawAll() {
 	}
 }
 
-void DrawManager::draw(Mesh& mesh, InstanceData& instanceData, const bool isStatic) {
+void DrawManager::draw(Model& model, InstanceData& instanceData, const bool isStatic) {
 	if (this == nullptr) return;
 
 	// Find render instance.
-	const RenderKey key(instanceData.getShader(), &mesh);
+	const RenderKey key(instanceData.getShader(), &model);
 	auto it = m_renderInstances.find(key);
 	if (it == m_renderInstances.end()) {
 		// Create render instance.

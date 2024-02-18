@@ -3,42 +3,49 @@
 
 #include <NoisyTerrain/Draw/StaticData.hpp>
 
-class Mesh {
+class ModelMesh {
 private:
+	Mutex m_mutex;
+
+private:
+	GLuint m_VBO, m_EBO;
+	size_t m_VBOUploadStart, m_VBOUploadRemaining,
+		m_EBOUploadStart, m_EBOUploadRemaining;
+	size_t m_renderCount, m_activeStride;
+
+private:
+	bool m_updated;
+	Map<String, size_t> m_activeOffsets;
 	Map<String, StaticData> m_data;
 	List<uint32_t> m_indices;
 
-private:
-	GLuint m_modelBuffer, m_elementBuffer;
-
-	bool m_indicesEnabled;
-	size_t m_renderCount, m_activeStaticStride;
-	Map<String, size_t> m_activeOffsets;
+public:
+	ModelMesh();
+	ModelMesh(const ModelMesh& other) = delete;
+	~ModelMesh();
 
 public:
-	Mesh();
-	Mesh(const Mesh& other) = delete;
-	~Mesh();
-
-public:
-	J_GETTER_DIRECT(getVBO, m_modelBuffer, GLuint);
-	J_GETTER_DIRECT(getEBO, m_elementBuffer, GLuint);
+	J_GETTER_DIRECT(getVBO, m_VBO, GLuint);
+	J_GETTER_DIRECT(getEBO, m_EBO, GLuint);
 	J_GETTER_DIRECT(getRenderCount, m_renderCount, size_t);
-	J_GETTER_DIRECT(getActiveStaticStride, m_activeStaticStride, size_t);
-	J_GETTER_DIRECT(getIndicesEnabled, m_indicesEnabled, bool);
+	J_GETTER_DIRECT(getRemainingUpload, m_VBOUploadRemaining + m_EBOUploadRemaining, size_t);
+	J_GETTER_DIRECT(getStaticStride, m_activeStride, size_t);
+	J_GETTER_DIRECT(getIndicesEnabled, m_EBOUploadStart + m_EBOUploadRemaining > 0, bool);
 	const size_t getActiveOffset(const String& staticName) const;
-
-public:
-	void load(const char* file);
-	void clear();
 
 public:
 	template <typename T>
 	void set(const String& staticName, const List<T>& data);
 	void set(const String& staticName, const void* const data, const size_t dataLength, const size_t dataStride);
-	J_SETTER_DIRECT(setIndices, const List<uint32_t>& indices, m_indices = indices;);
+	void setIndices(const List<uint32_t>& indices);
 
-	void commit();
+public:
+	void clear();
+	void upload(const size_t uploadMax = 200);
+
+public:
+	void lock();
+	void unlock();
 };
 
 #include "Mesh.ipp"

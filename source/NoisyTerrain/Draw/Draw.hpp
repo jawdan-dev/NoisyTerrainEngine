@@ -9,7 +9,7 @@ class DrawManager {
 
 private:
 	Matrix4 m_projection, m_view, m_viewProjection;
-	typedef std::pair<Shader*, Mesh*> RenderKey;
+	typedef std::pair<Shader*, Model*> RenderKey;
 	Map<RenderKey, RenderInstance*> m_renderInstances;
 
 public:
@@ -29,5 +29,5 @@ public:
 	void drawAll();
 
 public:
-	void draw(Mesh& mesh, InstanceData& instanceData, const bool isStatic = false);
+	void draw(Model& model, InstanceData& instanceData, const bool isStatic = false);
 };

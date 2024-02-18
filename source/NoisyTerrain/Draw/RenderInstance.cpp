@@ -1,11 +1,13 @@
 #include "RenderInstance.hpp"
 
-RenderInstance::RenderInstance(Shader* const shader, Mesh* const mesh) :
+RenderInstance::RenderInstance(Shader* const shader, Model* const model) :
 	m_instanceCount(0), m_staticInstanceCount(0),
 	m_instanceData(nullptr),
 	m_instanceDataCount(0), m_instancesUpdated(true),
+	m_drawSkip(0),
 	m_vao(0), m_ivbo(0),
-	m_shader(shader), m_mesh(mesh) {}
+	m_shader(shader),
+	m_modelUpdated(false), m_model(model) {}
 RenderInstance::~RenderInstance() {
 	// Cleanup.
 	if (m_vao) glDeleteVertexArrays(1, &m_vao);
@@ -59,103 +61,152 @@ void RenderInstance::addInstance(InstanceData& instanceData, const bool isStatic
 	m_instanceCount++;
 }
 
-void RenderInstance::draw(const Matrix4& viewProjection) {
-	if (this == nullptr || m_instanceCount <= 0 || m_mesh->getRenderCount() <= 0 || m_mesh->getVBO() <= 0) return;
+void RenderInstance::updateInstances() {
+	if (m_instanceCount <= 0) return;
 
-	// Check if instances have been updated.
-	if (m_instancesUpdated) {
-		if (!m_ivbo) {
-			// Initialize instance data.
-			glGenBuffers(1, &m_ivbo);
-			glBindBuffer(GL_ARRAY_BUFFER, m_ivbo);
-			glBufferData(GL_ARRAY_BUFFER, m_instanceDataCount * m_shader->getTotalInstanceSize(), m_instanceData, GL_DYNAMIC_DRAW);
-		} else {
-			// Update instance data.
-			glBindBuffer(GL_ARRAY_BUFFER, m_ivbo);
-			// TODO: Update subdata.
-			glBufferData(GL_ARRAY_BUFFER, m_instanceDataCount * m_shader->getTotalInstanceSize(), m_instanceData, GL_DYNAMIC_DRAW);
-		}
+	if (!m_ivbo) {
+		// Initialize instance data.
+		glGenBuffers(1, &m_ivbo);
+		glBindBuffer(GL_ARRAY_BUFFER, m_ivbo);
+		glBufferData(GL_ARRAY_BUFFER, m_instanceDataCount * m_shader->getTotalInstanceSize(), m_instanceData, GL_DYNAMIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-		if (!m_vao) {
-			// Create VAO.
-			glGenVertexArrays(1, &m_vao);
-			glBindVertexArray(m_vao);
-
-			// Set attributes.
-			const List<ShaderAttribute> attributes = m_shader->getAttributes();
-			for (size_t i = 0; i < attributes.size(); i++) {
-				// Get attribute.
-				const ShaderAttribute& attribute = attributes[i];
-
-				// Ignore non-used static.
-				const void* offset = (void*)(attribute.m_isStatic ? 0 : attribute.m_dataOffset);
-				if (attribute.m_isStatic) {
-					// Get static offset.
-					const size_t staticOffset = m_mesh->getActiveOffset(attribute.m_name);
-					if (staticOffset == -1) continue;
-					offset = (void*)staticOffset;
-				}
-
-				// Bind buffer.
-				if (attribute.m_isStatic) glBindBuffer(GL_ARRAY_BUFFER, m_mesh->getVBO());
-				else glBindBuffer(GL_ARRAY_BUFFER, m_ivbo);
-
-				// Get attribute information.
-				const uint16_t elementCount = glGetTypeElementCount(attribute.m_glType);
-				const GLenum type = glGetTypeBase(attribute.m_glType);
-				const size_t stride = attribute.m_isStatic ? m_mesh->getActiveStaticStride() : m_shader->getTotalInstanceSize();
-				const uint8_t divisor = attribute.m_isStatic ? 0 : 1;
-
-				// Set attribute information.
-				glVertexAttribPointer(
-					attribute.m_location,
-					elementCount, type,
-					GL_FALSE,
-					stride, offset
-				);
-				glVertexAttribDivisor(attribute.m_location, divisor);
-				glEnableVertexAttribArray(attribute.m_location);
-			}
-
-			// Unbind VAO.
-			glBindVertexArray(0);
-		}
-
-		// Update details.
-		m_instancesUpdated = false;
+	} else if (m_instancesUpdated) {
+		// Update instance data.
+		glBindBuffer(GL_ARRAY_BUFFER, m_ivbo);
+		// TODO: Update subdata.
+		glBufferData(GL_ARRAY_BUFFER, m_instanceDataCount * m_shader->getTotalInstanceSize(), m_instanceData, GL_DYNAMIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+}
+void RenderInstance::updateVAO(ModelMesh& mesh) {
+	// Make sure we have the buffers necessary.
+	if (!m_ivbo || !mesh.getVBO()) {
+		// Destroy VAO.
+		if (m_vao) glDeleteVertexArrays(1, &m_vao);
+		return;
 	}
 
-	if (!m_vao || !m_ivbo) return;
+	// Check if VAO needs to be updated.
+	const bool generateVAO = !m_vao;
+	if (mesh.getVBO() != m_lastUsedVBO) m_modelUpdated = true;
+	if (!generateVAO && !m_modelUpdated) return;
 
-	// Unbind VAO.
-	glUseProgram(m_shader->getProgram());
+	// Create VAO.
+	if (generateVAO) glGenVertexArrays(1, &m_vao);
 	glBindVertexArray(m_vao);
 
-	// Set uniforms.
-	const GLint viewProjectionLocation = glGetUniformLocation(m_shader->getProgram(), "u_viewProjection");
-	if (viewProjectionLocation != -1) glUniformMatrix4fv(viewProjectionLocation, 1, GL_FALSE, viewProjection.getData());
+	// Set attributes.
+	const List<ShaderAttribute>& attributes = m_shader->getAttributes();
+	for (size_t i = 0; i < attributes.size(); i++) {
+		// Get attribute.
+		const ShaderAttribute& attribute = attributes[i];
 
-	// Draw.
-	if (m_mesh->getIndicesEnabled() && m_mesh->getEBO()) {
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_mesh->getEBO());
-		glDrawElementsInstanced(
-			GL_TRIANGLES,
-			m_mesh->getRenderCount(), GL_UNSIGNED_INT, nullptr,
-			m_instanceCount
-		);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-	} else {
-		glDrawArraysInstanced(
-			GL_TRIANGLES,
-			0, m_mesh->getRenderCount(),
-			m_instanceCount
-		);
+		// Ignore non-used static.
+		size_t offset = (attribute.m_isStatic ? 0 : attribute.m_dataOffset);
+		if (attribute.m_isStatic) {
+			// Get static offset.
+			const size_t staticOffset = mesh.getActiveOffset(attribute.m_name);
+			if (staticOffset == -1) continue;
+			offset = staticOffset;
+		}
+
+		// Bind buffer.
+		if (attribute.m_isStatic) glBindBuffer(GL_ARRAY_BUFFER, mesh.getVBO());
+		else glBindBuffer(GL_ARRAY_BUFFER, m_ivbo);
+
+		// Get attribute information.
+		const uint16_t elementCount = glGetTypeElementCount(attribute.m_glType);
+		const GLenum type = glGetTypeBase(attribute.m_glType);
+		const size_t stride = attribute.m_isStatic ? mesh.getStaticStride() : m_shader->getTotalInstanceSize();
+		const uint8_t divisor = attribute.m_isStatic ? 0 : 1;
+
+		// Set attribute information.
+		switch (type) {
+			default: glVertexAttribPointer(attribute.m_location, elementCount, type, GL_FALSE, stride, (void*)offset); break;
+
+			case GL_UNSIGNED_INT:
+			case GL_INT: glVertexAttribIPointer(attribute.m_location, elementCount, type, stride, (void*)offset); break;
+
+			case GL_DOUBLE: glVertexAttribLPointer(attribute.m_location, elementCount, type, stride, (void*)offset); break;
+		}
+		glVertexAttribDivisor(attribute.m_location, divisor);
+		glEnableVertexAttribArray(attribute.m_location);
 	}
 
-	// Restart.
+	// Unbind VAO.
 	glBindVertexArray(0);
-	glUseProgram(0);
+
+	// Update details.
+	m_modelUpdated = false;
+	m_lastUsedVBO = mesh.getVBO();
+	m_drawSkip = 2;
+}
+
+void RenderInstance::draw(const Matrix4& viewProjection) {
+	if (this == nullptr || m_instanceCount <= 0) return;
+
+	// Get active mesh.
+	m_model->lock();
+	ModelMesh& mesh = m_model->getActiveMesh();
+	mesh.lock();
+
+	// Check if mesh ready to be used.
+	if (mesh.getRenderCount() <= 0 ||
+		!mesh.getVBO() &&
+		mesh.getRemainingUpload() > 0) {
+		// Make sure rebuild happens next render.
+		m_modelUpdated = true;
+		// Unlock access.
+		mesh.unlock();
+		m_model->unlock();
+		return;
+	}
+
+	// Update data.
+	updateInstances();
+
+	// Update VAO.
+	updateVAO(mesh);
+
+	// Draw.
+	if (!m_drawSkip <= 0 && m_vao && m_ivbo && m_shader->getProgram() && mesh.getVBO()) {
+		// Bind.
+		glUseProgram(m_shader->getProgram());
+		glBindVertexArray(m_vao);
+
+		// Set uniforms.
+		const GLint viewProjectionLocation = glGetUniformLocation(m_shader->getProgram(), "u_viewProjection");
+		if (viewProjectionLocation != -1) glUniformMatrix4fv(viewProjectionLocation, 1, GL_FALSE, viewProjection.getData());
+
+		// Draw.
+		if (mesh.getIndicesEnabled()) {
+			// Draw indices instanced.
+			if (mesh.getEBO()) {
+				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.getEBO());
+				glDrawElementsInstanced(
+					GL_TRIANGLES,
+					mesh.getRenderCount(), GL_UNSIGNED_INT, nullptr,
+					m_instanceCount
+				);
+				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+			}
+		} else {
+			// Draw arrays instanced.
+			glDrawArraysInstanced(
+				GL_TRIANGLES,
+				0, mesh.getRenderCount(),
+				m_instanceCount
+			);
+		}
+
+		// Reset bindings.
+		glBindVertexArray(0);
+		glUseProgram(0);
+	}
+
+	// Free locks.
+	mesh.unlock();
+	m_model->unlock();
 }
 void RenderInstance::clear() {
 	// Clear instances.

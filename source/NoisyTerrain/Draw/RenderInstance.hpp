@@ -2,7 +2,7 @@
 #include <NoisyTerrain/Core/Core.hpp>
 
 #include <NoisyTerrain/Draw/InstanceData.hpp>
-#include <NoisyTerrain/Draw/Mesh.hpp>
+#include <NoisyTerrain/Draw/Model.hpp>
 
 class RenderInstance {
 private:
@@ -11,12 +11,19 @@ private:
 	size_t m_instanceDataCount;
 	bool m_instancesUpdated;
 
+private:
+	uint16_t m_drawSkip;
 	GLuint m_vao, m_ivbo;
+
 	Shader* m_shader;
-	Mesh* m_mesh;
+
+private:
+	bool m_modelUpdated;
+	GLuint m_lastUsedVBO;
+	Model* m_model;
 
 public:
-	RenderInstance(Shader* const m_shader, Mesh* const m_mesh);
+	RenderInstance(Shader* const shader, Model* const model);
 	RenderInstance(const RenderInstance& other) = delete;
 	~RenderInstance();
 
@@ -25,6 +32,10 @@ public:
 
 public:
 	void addInstance(InstanceData& instanceData, const bool isStatic = false);
+
+private:
+	void updateInstances();
+	void updateVAO(ModelMesh& mesh);
 
 public:
 	void draw(const Matrix4& viewProjection);
