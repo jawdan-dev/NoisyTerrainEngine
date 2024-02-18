@@ -29,5 +29,6 @@ public:
 	void drawAll();
 
 public:
-	void draw(Model& model, InstanceData& instanceData, const bool isStatic = false);
+	void draw(Model& model, InstanceData& instanceData, const void* const staticID = nullptr);
+	void undrawStatic(const void* const staticID);
 };

@@ -1,7 +1,7 @@
 #include "RenderInstance.hpp"
 
 RenderInstance::RenderInstance(Shader* const shader, Model* const model) :
-	m_instanceCount(0), m_staticInstanceCount(0),
+	m_instanceCount(0), m_staticInstances(0),
 	m_instanceData(nullptr),
 	m_instanceDataCount(0), m_instancesUpdated(true),
 	m_drawSkip(0),
@@ -20,11 +20,11 @@ const size_t binarySize(const size_t x) {
 	while (a < x) a <<= 1;
 	return a;
 }
-const bool resize(void*& currentData, size_t& currentDataCount, const size_t dataCount, const size_t dataByteSize) {
+const bool resize(void*& currentData, size_t& currentDataCount, const size_t dataCount, const size_t dataSize) {
 	if (currentDataCount > dataCount) return true;
 
 	// Get new target size.
-	const size_t newSize = binarySize(dataCount) * dataByteSize;
+	const size_t newSize = binarySize(dataCount) * dataSize;
 
 	// Realloc data.
 	void* newData = realloc(currentData, newSize);
@@ -38,27 +38,103 @@ const bool resize(void*& currentData, size_t& currentDataCount, const size_t dat
 	currentDataCount = dataCount;
 	return true;
 }
+const bool insertData(
+	void* const data, const size_t dataCount, const size_t dataSize,
+	void* const newData, const size_t index
+) {
+	// Make sure its either inside or on the end.
+	if (index > dataCount)
+		return insertData(data, dataCount, dataSize, newData, dataCount);
 
-void RenderInstance::addInstance(InstanceData& instanceData, const bool isStatic) {
+	// Insert data.
+	if (index == dataCount) {
+		// Data location.
+		void* const targetData = data + (index * dataSize);
+		// Compare data.
+		if (memcmp(targetData, newData, dataSize)) {
+			// Update data.
+			memcpy(targetData, newData, dataSize);
+			return true;
+		}
+	} else {
+		// Data location.
+		void* const targetData = data + ((index + 1) * dataSize);
+		void* const sourceData = data + (index * dataSize);
+		const size_t moveLength = dataCount - (index + 1);
+
+		// Move data.
+		if (moveLength > 0)
+			memmove(targetData, sourceData, moveLength);
+
+		// Insert new data.
+		memcpy(sourceData, newData, dataSize);
+		return true;
+	}
+
+	// No changes made.
+	return false;
+}
+const bool removeData(
+	void* const data, const size_t dataCount, const size_t dataSize,
+	const size_t index
+) {
+	// Make sure its either inside or on the end.
+	if (index >= dataCount) return false;
+
+	// Data location.
+	void* const targetData = data + (index * dataSize);
+	void* const sourceData = data + ((index + 1) * dataSize);
+	const size_t moveLength = dataCount - (index + 1);
+
+	// Move data.
+	if (moveLength > 0)
+		memmove(targetData, sourceData, moveLength);
+
+	return true;
+}
+
+void RenderInstance::addInstance(InstanceData& instanceData, const void* const staticID) {
 	if (this == nullptr ||
 		instanceData.getShader() != m_shader ||
 		!resize(m_instanceData, m_instanceDataCount, m_instanceCount + 1, m_shader->getTotalInstanceSize())) return;
 
-	// Check if data has been updated.
-	const size_t dataLength = m_shader->getTotalInstanceSize();
-	void* const targetData = m_instanceData + (m_instanceCount * dataLength);
-	const void* const srcData = instanceData.getData();
-
-	if (memcmp(targetData, srcData, dataLength)) {
-		// Update data.
-		memcpy(targetData, srcData, dataLength);
-
-		// Update details.
-		m_instancesUpdated = true;
+	if (staticID == nullptr) {
+		// Insert instance data.
+		if (insertData(
+			m_instanceData, m_instanceDataCount, m_shader->getTotalInstanceSize(),
+			instanceData.getData(), m_instanceDataCount
+		)) {
+			m_instancesUpdated = true;
+		}
+	} else {
+		// Insert static data.
+		if (insertData(
+			m_instanceData, m_instanceDataCount, m_shader->getTotalInstanceSize(),
+			instanceData.getData(), m_staticInstances.size()
+		)) {
+			m_staticInstances.push_back(staticID);
+			m_instancesUpdated = true;
+		}
 	}
 
 	// Update details.
 	m_instanceCount++;
+}
+void RenderInstance::removeStaticInstance(const void* const staticID) {
+	if (staticID == nullptr) return;
+
+	for (size_t i = 0; i < m_staticInstances.size(); i++) {
+		if (m_staticInstances[i] != staticID) continue;
+
+		// Remve data.
+		if (removeData(m_instanceData, m_instanceCount, m_shader->getTotalInstanceSize(), i)) {
+			m_instancesUpdated = true;
+			m_instanceCount--;
+		}
+
+		// Remove instance.
+		m_staticInstances.erase(m_staticInstances.begin() + i);
+	}
 }
 
 void RenderInstance::updateInstances() {
@@ -210,5 +286,5 @@ void RenderInstance::draw(const Matrix4& viewProjection) {
 }
 void RenderInstance::clear() {
 	// Clear instances.
-	m_instanceCount = m_staticInstanceCount;
+	m_instanceCount = m_staticInstances.size();
 }

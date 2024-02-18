@@ -46,7 +46,7 @@ void DrawManager::drawAll() {
 	}
 }
 
-void DrawManager::draw(Model& model, InstanceData& instanceData, const bool isStatic) {
+void DrawManager::draw(Model& model, InstanceData& instanceData, const void* const staticID) {
 	if (this == nullptr) return;
 
 	// Find render instance.
@@ -58,5 +58,13 @@ void DrawManager::draw(Model& model, InstanceData& instanceData, const bool isSt
 	}
 
 	// Insert instance.
-	it->second->addInstance(instanceData, isStatic);
+	it->second->addInstance(instanceData, staticID);
+}
+void DrawManager::undrawStatic(const void* const staticID) {
+	if (staticID == nullptr) return;
+
+	// Remove static instance from all buffers.
+	for (auto it = m_renderInstances.begin(); it != m_renderInstances.end(); it++) {
+		it->second->removeStaticInstance(staticID);
+	}
 }

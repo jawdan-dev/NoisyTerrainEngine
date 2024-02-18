@@ -6,7 +6,9 @@
 
 class RenderInstance {
 private:
-	size_t m_instanceCount, m_staticInstanceCount;
+	size_t m_instanceCount;
+	List<const void*> m_staticInstances;
+
 	void* m_instanceData;
 	size_t m_instanceDataCount;
 	bool m_instancesUpdated;
@@ -31,7 +33,8 @@ public:
 	J_GETTER_DIRECT(getInstanceCount, m_instanceCount, size_t);
 
 public:
-	void addInstance(InstanceData& instanceData, const bool isStatic = false);
+	void addInstance(InstanceData& instanceData, const void* const staticID = nullptr);
+	void removeStaticInstance(const void* const staticID);
 
 private:
 	void updateInstances();
