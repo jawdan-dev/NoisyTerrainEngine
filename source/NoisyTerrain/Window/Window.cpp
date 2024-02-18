@@ -93,6 +93,9 @@ const bool WindowManager::process() {
 	glfwPollEvents();
 	if (glfwWindowShouldClose(m_window)) return false;
 
+	// Update time.
+	m_time.updateTime();
+
 	// Bind singletons.
 	J_SINGLETON_SET(WindowManager, this);
 	J_SINGLETON_SET(TimeManager, &m_time);
@@ -101,9 +104,6 @@ const bool WindowManager::process() {
 
 	// Set context.
 	glfwMakeContextCurrent(m_window);
-
-	// Update time.
-	m_time.updateTime();
 
 	// Clear buffer.
 	m_draw.clear();
@@ -114,6 +114,9 @@ const bool WindowManager::process() {
 
 	// Draw.
 	m_draw.drawAll();
+
+	// Process inputs.
+	m_input.process();
 
 	// Swap buffers.
 	glfwSwapBuffers(m_window);
