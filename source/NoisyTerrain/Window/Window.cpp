@@ -5,7 +5,8 @@ J_SINGLETON_DEF(WindowManager);
 WindowManager::WindowManager() :
 	m_window(nullptr),
 	m_x(0), m_y(0), m_width(0), m_height(0),
-	m_time(), m_input(), m_draw(), m_entityManager() {
+	m_threadPool(), m_time(), m_input(), m_draw(),
+	m_entityManager() {
 	// GLFW init.
 	if (!glfwInit()) J_ERROR_EXIT("Window.cpp: Failed to initialize window.\n");
 
@@ -91,13 +92,18 @@ WindowManager::~WindowManager() {
 const bool WindowManager::process() {
 	// Handle events.
 	glfwPollEvents();
-	if (glfwWindowShouldClose(m_window)) return false;
+	if (glfwWindowShouldClose(m_window)) {
+		// Terminate all.
+		m_threadPool.terminateThreads();
+		return false;
+	}
 
 	// Update time.
 	m_time.updateTime();
 
 	// Bind singletons.
 	J_SINGLETON_SET(WindowManager, this);
+	J_SINGLETON_SET(ThreadPoolManager, &m_threadPool);
 	J_SINGLETON_SET(TimeManager, &m_time);
 	J_SINGLETON_SET(InputManager, &m_input);
 	J_SINGLETON_SET(DrawManager, &m_draw);
