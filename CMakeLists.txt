@@ -3,7 +3,7 @@ project(NoisyTerrainGame)
 
 # Executable Declaration.
 add_executable(NoisyTerrain ${CMAKE_CURRENT_SOURCE_DIR}/source/NoisyTerrain/Core/EntryPoint.cpp)
-file(GLOB_RECURSE SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/source/NoisyTerrain/*.cpp)
+file(GLOB_RECURSE SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp)
 target_sources(NoisyTerrain PRIVATE ${SRC_FILES})
 
 # Target Properties.
