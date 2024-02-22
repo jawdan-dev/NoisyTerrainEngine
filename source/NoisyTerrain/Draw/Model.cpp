@@ -9,7 +9,7 @@ void Model::load(const char* file) {
 	// TODO:
 	J_ERROR_EXIT("Model.cpp: Model loading not yet implemented.\n");
 }
-void Model::upload() {
+const bool Model::upload() {
 	// Get mesh.
 	ModelMesh& mesh = getInactiveMesh();
 
@@ -31,12 +31,21 @@ void Model::upload() {
 			inactiveMesh.clear();
 			inactiveMesh.unlock();
 		}
-	} else {
-		// Unlock.
-		mesh.unlock();
+
+		// Model finished uploading.
+		return true;
 	}
+
+	// Unlock.
+	mesh.unlock();
+
+	// Model still uploading.
+	return false;
 }
 
+const bool Model::tryLock() {
+	return m_mutex.try_lock();
+}
 void Model::lock() {
 	m_mutex.lock();
 }

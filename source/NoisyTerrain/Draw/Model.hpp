@@ -25,9 +25,10 @@ public:
 
 public:
 	void load(const char* file);
-	void upload();
+	const bool upload();
 
 public:
+	const bool tryLock();
 	void lock();
 	void unlock();
 };
