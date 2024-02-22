@@ -28,7 +28,7 @@ public:
 	~WindowManager();
 
 public:
-	J_GETTER_DIRECT(getWindowContext, m_window, GLFWwindow* const);
+	J_GETTER_DIRECT_MUT(getWindowContext, m_window, GLFWwindow* const);
 	J_GETTER_DIRECT(getX, m_x, int);
 	J_GETTER_DIRECT(getY, m_y, int);
 	J_GETTER_DIRECT(getWidth, m_width, int);
