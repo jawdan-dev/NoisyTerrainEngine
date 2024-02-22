@@ -1,3 +1,9 @@
 [submodule "modules/JLib"]
 	path = modules/JLib
 	url = https://github.com/jawdan-dev/JLib
+[submodule "modules/GLFW"]
+	path = modules/GLFW
+	url = https://github.com/glfw/glfw
+[submodule "modules/GLEW"]
+	path = modules/GLEW
+	url = https://github.com/Perlmint/glew-cmake

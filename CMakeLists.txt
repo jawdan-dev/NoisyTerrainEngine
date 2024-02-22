@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.7)
-project(NoisyTerrainGame)
+project(NoisyTerrain)
 
 # Executable Declaration.
 add_executable(NoisyTerrain ${CMAKE_CURRENT_SOURCE_DIR}/source/NoisyTerrain/Core/EntryPoint.cpp)
@@ -29,26 +29,34 @@ foreach(ASSET_FILE IN LISTS ASSET_FILES_RAW)
 endforeach()
 
 ## Modules.
-# Modules Folder Include.
-list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/modules)
+# Submodule validate function.
+function(check_and_add_subdirectory dir)
+    if (NOT EXISTS ${dir}/CMakeLists.txt)
+        message(FATAL_ERROR "Fatal: Submodule " ${dir} " not found\n")
+    endif ()
+    add_subdirectory(${dir})
+endfunction()
 
 # Custom modules.
-add_subdirectory(modules/JLib)
+check_and_add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/modules/JLib)
+target_link_libraries(NoisyTerrain PRIVATE JLib)
 
 # GLFW.
-target_include_directories(NoisyTerrain PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/modules/glfw/include)
-target_link_directories(NoisyTerrain PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/modules/glfw/lib-mingw-w64)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+check_and_add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/modules/GLFW)
+target_include_directories(NoisyTerrain PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/modules/GLFW/include)
+target_link_libraries(NoisyTerrain PRIVATE glfw)
 
 # GLEW.
-target_include_directories(NoisyTerrain PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/modules/glew/include)
-target_link_directories(NoisyTerrain PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/modules/glew/lib/Release/x64 ${CMAKE_CURRENT_SOURCE_DIR}/modules/glew/lib/Release/Win32)
+set(glew-cmake_BUILD_SHARED FALSE)
+set(glew-cmake_BUILD_STATIC ON)
+set(ONLY_LIBS ON)
+check_and_add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/modules/GLEW)
+target_include_directories(NoisyTerrain PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/modules/GLEW/include)
+target_link_libraries(NoisyTerrain PRIVATE libglew_static)
 
-# Library linking.
-target_link_libraries(
-	NoisyTerrain PRIVATE
-	# Custom.
-	JLib
-	#Other
-	-Wl,--export-all-symbols,-allow-multiple-definition
-	-static glew32s glfw3 opengl32 gdi32
-)
+# OpenGL.
+find_package(OpenGL REQUIRED)
+target_link_libraries(NoisyTerrain PRIVATE OpenGL::GL)
