@@ -122,14 +122,13 @@ const ThreadJobID ThreadPoolManager::enqueueJob(const Function<void()>& process,
 	return jobID;
 }
 
+const bool ThreadPoolManager::tryLock() {
+	return m_dispatchMutex.try_lock();
+}
 void ThreadPoolManager::lock() {
-	if (this == nullptr) return;
-
 	m_dispatchMutex.lock();
 }
 void ThreadPoolManager::unlock() {
-	if (this == nullptr) return;
-
 	m_dispatchMutex.unlock();
 }
 
@@ -137,18 +136,20 @@ void ThreadPoolManager::createThreads() {
 	if (this == nullptr || m_threads.size() > 0) return;
 
 	// Get max hardware thread count.
-	size_t targetThreadCount = std::thread::hardware_concurrency();
+	static constexpr uint32_t minimumThreadCount = 4;
+	uint32_t targetThreadCount = std::thread::hardware_concurrency();
 	if (targetThreadCount <= 0) {
 		// Set to default.
-		targetThreadCount = 4;
+		targetThreadCount = minimumThreadCount;
 		// Report error.
-		J_WARNING("ThreadPool.cpp: Thread pool unable to get hardware concurrency information, defaulting to %llu threads.\n", targetThreadCount);
+		J_WARNING("ThreadPool.cpp: Unable to get hardware concurrency information, defaulting to %llu threads.\n", targetThreadCount);
 	} else {
+		targetThreadCount = __max(minimumThreadCount, targetThreadCount);
 		J_LOG("ThreadPool.cpp: Thread pool created with %llu threads.\n", targetThreadCount);
 	}
 
 	// Create threads.
-	for (size_t i = 0; i < targetThreadCount; i++)
+	for (uint32_t i = 0; i < targetThreadCount; i++)
 		m_threads.emplace_back(&threadLoop, this);
 }
 void ThreadPoolManager::terminateThreads() {
@@ -190,13 +191,17 @@ void ThreadPoolManager::threadLoop() {
 			// Take job.
 			jobID = takeJob();
 			job = getJob(jobID);
+
+			// Check if another one can be dispatched.
+			if (!m_inactiveJobs.empty())
+				// Dispatch another thread.
+				m_dispatchCondition.notify_one();
 		}
 
-		// Run job.
-		if (job != nullptr)
+		if (job != nullptr) {
+			// Run job.
 			job->process();
 
-		{
 			// Complete job.
 			MutexLock lock(m_dispatchMutex);
 			completeJob(jobID);

@@ -43,6 +43,7 @@ public:
 	const ThreadJobID enqueueJob(const Function<void()>& process, const List<ThreadJobID> dependencies = {});
 
 public:
+	const bool tryLock();
 	void lock();
 	void unlock();
 
