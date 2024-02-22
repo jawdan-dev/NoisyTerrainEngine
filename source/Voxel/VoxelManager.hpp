@@ -1,0 +1,20 @@
+#pragma once
+#include <NoisyTerrain/Core/Core.hpp>
+
+#include <Voxel/Chunk/ChunkManager.hpp>
+#include <Voxel/Layer/LayerManager.hpp>
+
+class VoxelManager {
+private:
+	LayerManager m_layerManager;
+	ChunkManager m_chunkManager;
+
+public:
+	VoxelManager();
+	VoxelManager(const VoxelManager& other) = delete;
+	~VoxelManager();
+
+public:
+	J_GETTER_DIRECT_MUT(getLayerManager, &m_layerManager, LayerManager* const);
+	J_GETTER_DIRECT_MUT(getChunkManager, &m_chunkManager, ChunkManager* const);
+};
