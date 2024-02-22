@@ -1,12 +1,17 @@
 #include <NoisyTerrain/NoisyTerrain.hpp>
 
-#include <Entities/TestEntity.hpp>
+#include <Entities/CameraEntity.hpp>
 
 int main() {
 	printf("Wassup, 'Matrix.\n");
 
 	// Create window.
 	WindowManager window;
+
+	// TODO: Scenes?
+	// Environment setup.
+	EntityManager& em = *window.getEntityManager();
+	em.addEntity(new CameraEntity);
 
 	// Process.
 	while (window.process());
