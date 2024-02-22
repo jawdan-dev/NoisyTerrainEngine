@@ -10,7 +10,7 @@ private:
 
 public:
 	Entity();
-	~Entity();
+	virtual ~Entity();
 
 public:
 	J_GETTER_DIRECT_MUT(getPosition, m_position, Vector3&);
