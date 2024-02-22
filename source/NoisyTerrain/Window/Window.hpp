@@ -41,5 +41,9 @@ public:
 	J_GETTER_DIRECT_MUT(getEntityManager, &m_entityManager, EntityManager* const);
 
 public:
+	J_SETTER_DIRECT(setTitle, const char* title, glfwSetWindowTitle(m_window, title));
+	J_SETTER_DIRECT(setClearColor, ARGS(const float r, const float g, const float b, const float a = 1.0f), glfwMakeContextCurrent(m_window); glClearColor(r, g, b, a));
+
+public:
 	const bool process();
 };

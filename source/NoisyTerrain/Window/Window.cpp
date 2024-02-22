@@ -35,6 +35,7 @@ WindowManager::WindowManager() :
 
 	// Set config.
 	glfwSwapInterval(1);
+	glClearColor(0.1, 0.1, 0.1, 1.0);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glEnable(GL_CULL_FACE);

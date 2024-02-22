@@ -8,6 +8,7 @@ int main() {
 
 	// Create window.
 	WindowManager window;
+	window.setClearColor(0.45f, 0.6f, 1.0f);
 
 	// TODO: Scenes?
 	// Environment setup.
