@@ -1,6 +1,7 @@
 #include <NoisyTerrain/NoisyTerrain.hpp>
 
 #include <Entities/CameraEntity.hpp>
+#include <Entities/VoxelEntity.hpp>
 
 int main() {
 	printf("Wassup, 'Matrix.\n");
@@ -12,6 +13,7 @@ int main() {
 	// Environment setup.
 	EntityManager& em = *window.getEntityManager();
 	em.addEntity(new CameraEntity);
+	em.addEntity(new VoxelEntity);
 
 	// Process.
 	while (window.process());
