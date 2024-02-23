@@ -17,8 +17,11 @@ const bool Model::upload() {
 	mesh.lock();
 	mesh.upload();
 
+	// Get remaining upload.
+	const size_t remainingUpload = mesh.getRemainingUpload();
+
 	// Check if meshes can be swapped.
-	if (mesh.getRenderCount() > 0 && mesh.getRemainingUpload() <= 0) {
+	if (mesh.getRenderCount() > 0 && remainingUpload <= 0) {
 		// Update active mesh.
 		m_activeMesh = getInactiveIndex();
 		// Unlock.
@@ -31,16 +34,13 @@ const bool Model::upload() {
 			inactiveMesh.clear();
 			inactiveMesh.unlock();
 		}
-
-		// Model finished uploading.
-		return true;
+	} else {
+		// Unlock.
+		mesh.unlock();
 	}
 
-	// Unlock.
-	mesh.unlock();
-
-	// Model still uploading.
-	return false;
+	// Return if model still uploading.
+	return remainingUpload > 0;
 }
 
 const bool Model::tryLock() {
