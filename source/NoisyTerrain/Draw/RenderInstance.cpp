@@ -168,7 +168,10 @@ void RenderInstance::updateVAO(ModelMesh& mesh) {
 	if (!generateVAO && !m_modelUpdated) return;
 
 	// Create VAO.
-	if (generateVAO) glGenVertexArrays(1, &m_vao);
+	if (generateVAO) {
+		glGenVertexArrays(1, &m_vao);
+		m_drawSkip = 5;
+	}
 	glBindVertexArray(m_vao);
 
 	// Set attributes.
@@ -215,7 +218,6 @@ void RenderInstance::updateVAO(ModelMesh& mesh) {
 	// Update details.
 	m_modelUpdated = false;
 	m_lastUsedVBO = mesh.getVBO();
-	m_drawSkip = 2;
 }
 
 void RenderInstance::draw(const Matrix4& viewProjection) {
@@ -245,14 +247,10 @@ void RenderInstance::draw(const Matrix4& viewProjection) {
 	updateVAO(mesh);
 
 	// Draw.
-	if (!m_drawSkip <= 0 && m_vao && m_ivbo && m_shader->getProgram() && mesh.getVBO()) {
+	if (m_drawSkip <= 0 && m_vao && m_ivbo && m_shader->getProgram() && mesh.getVBO()) {
 		// Bind.
 		glUseProgram(m_shader->getProgram());
 		glBindVertexArray(m_vao);
-
-		// Set uniforms.
-		const GLint viewProjectionLocation = glGetUniformLocation(m_shader->getProgram(), "u_viewProjection");
-		if (viewProjectionLocation != -1) glUniformMatrix4fv(viewProjectionLocation, 1, GL_FALSE, viewProjection.getData());
 
 		// Draw.
 		if (mesh.getIndicesEnabled()) {
@@ -264,7 +262,6 @@ void RenderInstance::draw(const Matrix4& viewProjection) {
 					mesh.getRenderCount(), GL_UNSIGNED_INT, nullptr,
 					m_instanceCount
 				);
-				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 			}
 		} else {
 			// Draw arrays instanced.
@@ -274,10 +271,8 @@ void RenderInstance::draw(const Matrix4& viewProjection) {
 				m_instanceCount
 			);
 		}
-
-		// Reset bindings.
-		glBindVertexArray(0);
-		glUseProgram(0);
+	} else if (m_drawSkip > 0) {
+		m_drawSkip--;
 	}
 
 	// Free locks.

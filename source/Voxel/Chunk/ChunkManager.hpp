@@ -15,16 +15,21 @@ private:
 	Map<ChunkLocation, Chunk> m_chunks;
 
 private:
-	Mutex m_activeJobsMutex;
-	List<ThreadJobID> m_activeJobsList;
+	static constexpr float activeJobCooldownMax = 0.2f;
+	float m_activeJobCooldown;
+	Mutex m_activeJobMutex;
+	List<ThreadJobID> m_activeJobList;
+	Mutex m_visibilityMutex;
+	Set<ChunkLocation> m_visibilityQueue;
+	ChunkLocation m_visibilityCenter;
 
 private:
 	Mutex m_pendingModelsMutex;
-	List<Model*> m_pendingModelsList;
+	Set<Model*> m_pendingModelsList;
 
 private:
-	Mutex m_initializationMutex, m_placementMutex, m_rebuildMutex, m_drawMutex;
-	Set<ChunkLocation> m_initializationQueue, m_placementQueue, m_rebuildQueue, m_drawQueue;
+	Mutex m_initializationMutex, m_placementMutex, m_rebuildMutex, m_drawMutex, m_undrawMutex;
+	Set<ChunkLocation> m_initializationQueue, m_placementQueue, m_rebuildQueue, m_drawQueue, m_undrawQueue;
 
 public:
 	ChunkManager(VoxelManager* const voxelManager);
@@ -41,7 +46,8 @@ public:
 	void setVoxel(const VoxelLocation& location, const VoxelID voxelID);
 
 public:
-	void process(const ChunkLocation& processCenter);
+	void process(const ChunkLocation& visibilityCenter);
+	void upload();
 	void draw(Shader& shader);
 
 public:
@@ -67,4 +73,9 @@ public:
 	void queueDraw(const ChunkLocation& location);
 	void lockDraw();
 	void unlockDraw();
+
+public:
+	void queueUndraw(const ChunkLocation& location);
+	void lockUndraw();
+	void unlockUndraw();
 };

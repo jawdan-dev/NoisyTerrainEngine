@@ -36,6 +36,7 @@ public:
 
 public:
 	J_GETTER_DIRECT(hasLoaded, m_initialized, bool);
+	J_GETTER_DIRECT(hasDrawn, m_drawn, bool);
 	const VoxelID getVoxel(const VoxelLocation& location);
 	J_GETTER_DIRECT(getChunkLocation, m_location, ChunkLocation&);
 	J_GETTER_DIRECT(getVoxelLocation, m_location, VoxelLocation);
@@ -60,5 +61,8 @@ public:
 public:
 	void queueDraw() const;
 	void forceDraw(InstanceData& instanceData);
+
+public:
+	void queueUndraw() const;
 	void forceUndraw();
 };

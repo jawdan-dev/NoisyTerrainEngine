@@ -592,9 +592,6 @@ void Chunk::forceRebuild() {
 	// Unlock.
 	mesh.unlock();
 	m_model.unlock();
-
-	// Draw.
-	if (!m_drawn) queueDraw();
 }
 
 void Chunk::queueDraw() const {
@@ -604,7 +601,7 @@ void Chunk::queueDraw() const {
 	m_chunkManager->unlockDraw();
 }
 void Chunk::forceDraw(InstanceData& instanceData) {
-	if (m_drawn) return;
+	if (!m_initialized || m_drawn) return;
 
 	// Set instance data.
 	const VoxelLocation location = getVoxelLocation();
@@ -615,14 +612,42 @@ void Chunk::forceDraw(InstanceData& instanceData) {
 	// Draw chunk (statically).
 	Draw.draw(m_model, instanceData, this);
 
+	// Get mesh.
+	m_model.lock();
+	ModelMesh& mesh = m_model.getActiveMesh();
+	mesh.lock();
+	// Check if mesh has been made.
+	if (mesh.getRenderCount() <= 0)
+		queueRebuild();
+	// Unlock.
+	mesh.unlock();
+	m_model.unlock();
+
 	// Update details.
 	m_drawn = true;
+}
+
+void Chunk::queueUndraw() const {
+	// Queue undraw.
+	m_chunkManager->lockUndraw();
+	m_chunkManager->queueUndraw(m_location);
+	m_chunkManager->unlockUndraw();
 }
 void Chunk::forceUndraw() {
 	if (!m_drawn) return;
 
 	// Undraw chunk.
 	Draw.undrawStatic(this);
+
+	// Get mesh.
+	m_model.lock();
+	ModelMesh& mesh = m_model.getActiveMesh();
+	mesh.lock();
+	// Clear mesh (its for the best).
+	mesh.clear();
+	// Unlock.
+	mesh.unlock();
+	m_model.unlock();
 
 	// Update details.
 	m_drawn = false;
