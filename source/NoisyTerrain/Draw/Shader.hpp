@@ -2,6 +2,7 @@
 #include <NoisyTerrain/Core/Core.hpp>
 
 #include <NoisyTerrain/Draw/ShaderAttribute.hpp>
+#include <NoisyTerrain/Draw/ShaderUniform.hpp>
 
 class Shader {
 private:
@@ -9,6 +10,7 @@ private:
 	bool m_loaded;
 	GLuint m_shaderProgram;
 	Map<String, ShaderAttribute> m_attributes;
+	Map<String, ShaderUniform> m_uniforms;
 	size_t m_instanceTotalSize, m_staticTotalSize;
 
 public:
@@ -22,6 +24,8 @@ public:
 	const GLuint getProgram();
 	const ShaderAttribute* const getAttribute(const char* attributeName);
 	const List<ShaderAttribute> getAttributes();
+	const ShaderUniform* const getUniform(const char* uniformName);
+	const List<ShaderUniform> getUniforms();
 
 private:
 	void load();

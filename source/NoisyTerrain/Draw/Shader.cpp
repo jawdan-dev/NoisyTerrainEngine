@@ -4,7 +4,7 @@ Shader::Shader(const char* file) :
 	m_file(file),
 	m_loaded(false),
 	m_shaderProgram(0),
-	m_attributes(),
+	m_attributes(), m_uniforms(),
 	m_instanceTotalSize(0), m_staticTotalSize(0) {}
 Shader::~Shader() {
 	// Cleanup shader.
@@ -71,10 +71,31 @@ const List<ShaderAttribute> Shader::getAttributes() {
 	// Get attributes.
 	List<ShaderAttribute> attributes;
 	for (auto it = m_attributes.begin(); it != m_attributes.end(); it++) {
-	// Add attributes to list.
+		// Add attribute to list.
 		attributes.emplace_back(it->second);
 	}
 	return attributes;
+}
+const ShaderUniform* const Shader::getUniform(const char* uniformName) {
+	load();
+
+	// Find uniform.
+	auto it = m_uniforms.find(uniformName);
+	if (it == m_uniforms.end()) return nullptr;
+
+	// Return uniform.
+	return &it->second;
+}
+const List<ShaderUniform> Shader::getUniforms() {
+	load();
+
+	// Get uniforms.
+	List<ShaderUniform> uniforms;
+	for (auto it = m_uniforms.begin(); it != m_uniforms.end(); it++) {
+		// Add uniform to list.
+		uniforms.emplace_back(it->second);
+	}
+	return uniforms;
 }
 
 void readShaderSource(const char* sourcePath, const char* defaultVersion, String& vertexSource, String& fragmentSource) {
@@ -193,7 +214,6 @@ void loadShaderAttributes(
 	GLenum attributeType;
 
 	// Loading time.
-	;
 	for (size_t i = 0; i < attributeCount; i++) {
 		// Get attribute information.
 		glGetActiveAttrib(
@@ -229,6 +249,48 @@ void loadShaderAttributes(
 	// Cleanup.
 	delete[] nameBuffer;
 }
+void loadShaderUniforms(
+	const GLuint shaderProgram,
+	Map<String, ShaderUniform>& uniforms
+) {
+	// Clear attributes.
+	uniforms.clear();
+
+	// Get attributes information.
+	GLint uniformCount, maxNameSize;
+	glGetProgramiv(shaderProgram, GL_ACTIVE_UNIFORMS, &uniformCount);
+	if (uniformCount <= 0) return;
+	glGetProgramiv(shaderProgram, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxNameSize);
+	maxNameSize += 1;
+
+	// Allocating the space needed for reading the attributes.
+	char* nameBuffer = new char[maxNameSize];
+	GLint nameLength, uniformSize, uniformLocation;
+	GLenum uniformType;
+
+	// Loading time.
+	for (size_t i = 0; i < uniformCount; i++) {
+		// Get attribute information.
+		glGetActiveUniform(
+			shaderProgram, i,
+			maxNameSize, &nameLength,
+			&uniformSize, &uniformType, nameBuffer
+		);
+		uniformLocation = glGetUniformLocation(shaderProgram, nameBuffer);
+
+		// Add to attribute list.
+		uniforms.emplace(
+			String(nameBuffer),
+			ShaderUniform(
+				nameBuffer,
+				uniformLocation, uniformType
+			)
+		);
+	}
+
+	// Cleanup.
+	delete[] nameBuffer;
+}
 
 void Shader::load() {
 	// Ignore if already loaded.
@@ -246,6 +308,9 @@ void Shader::load() {
 	loadShaderAttributes(
 		m_shaderProgram, m_attributes,
 		m_instanceTotalSize, m_staticTotalSize
+	);
+	loadShaderUniforms(
+		m_shaderProgram, m_uniforms
 	);
 
 	// Update details.
