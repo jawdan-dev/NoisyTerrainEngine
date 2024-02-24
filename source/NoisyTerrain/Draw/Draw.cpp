@@ -43,6 +43,11 @@ void DrawManager::drawAll() {
 	for (auto it = m_renderInstances.begin(); it != m_renderInstances.end(); it++) {
 		it->second->draw(m_viewProjection);
 	}
+
+	// Reset bindings.
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+	glUseProgram(0);
 }
 
 void DrawManager::draw(Model& model, InstanceData& instanceData, const void* const staticID) {
