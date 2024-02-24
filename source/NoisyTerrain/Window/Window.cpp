@@ -109,9 +109,6 @@ const bool WindowManager::process() {
 	J_SINGLETON_SET(InputManager, &m_input);
 	J_SINGLETON_SET(DrawManager, &m_draw);
 
-	// Set context.
-	glfwMakeContextCurrent(m_window);
-
 	// Clear buffer.
 	m_draw.clear();
 
