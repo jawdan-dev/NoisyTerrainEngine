@@ -22,8 +22,6 @@ ThreadPoolManager::~ThreadPoolManager() {
 }
 
 ThreadJob* const ThreadPoolManager::getJob(const ThreadJobID jobID) {
-	if (this == nullptr) return nullptr;
-
 	// Get job.
 	auto it = m_jobs.find(jobID);
 	if (it == m_jobs.end()) return nullptr;
@@ -32,8 +30,6 @@ ThreadJob* const ThreadPoolManager::getJob(const ThreadJobID jobID) {
 	return it->second;
 }
 const bool ThreadPoolManager::getJobAvailable(const ThreadJobID jobID) {
-	if (this == nullptr) return false;
-
 	// Get job.
 	ThreadJob* const job = getJob(jobID);
 	if (job == nullptr) return false;
@@ -54,13 +50,10 @@ const bool ThreadPoolManager::getJobAvailable(const ThreadJobID jobID) {
 }
 
 const bool ThreadPoolManager::getJobActive(const ThreadJobID jobID) {
-	if (this == nullptr) return false;
 	// Find job.
 	return m_jobs.find(jobID) != m_jobs.end();
 }
 const bool ThreadPoolManager::getJobsActive(const List<ThreadJobID>& jobIDs) {
-	if (this == nullptr) return false;
-
 	// Check for active jobs.
 	for (size_t i = 0; i < jobIDs.size(); i++)
 		if (getJobActive(jobIDs[i]))
@@ -70,8 +63,6 @@ const bool ThreadPoolManager::getJobsActive(const List<ThreadJobID>& jobIDs) {
 	return false;
 }
 const bool ThreadPoolManager::getJobsActiveMut(List<ThreadJobID>& jobIDs) {
-	if (this == nullptr) return false;
-
 	// Remove any inactive jobs.
 	for (auto it = jobIDs.begin(); it != jobIDs.end();) {
 		if (!getJobActive(*it)) {
@@ -88,8 +79,6 @@ const bool ThreadPoolManager::getJobsActiveMut(List<ThreadJobID>& jobIDs) {
 }
 
 void ThreadPoolManager::waitForJob(const ThreadJobID jobID) {
-	if (this == nullptr) return;
-
 	// Wait for job.
 	MutexLock lock(m_waitMutex);
 	m_waitCondition.wait(lock, [this, jobID]() {
@@ -97,16 +86,12 @@ void ThreadPoolManager::waitForJob(const ThreadJobID jobID) {
 	});
 }
 void ThreadPoolManager::waitForJobs(const List<ThreadJobID>& jobIDs) {
-	if (this == nullptr) return;
-
 	// Wait for jobs.
 	for (size_t i = 0; i < jobIDs.size(); i++)
 		waitForJob(jobIDs[i]);
 }
 
 const ThreadJobID ThreadPoolManager::enqueueJob(const Function<void()>& process, const List<ThreadJobID> dependencies) {
-	if (this == nullptr) return ThreadJobID_INVALID;
-
 	// Get job ID.
 	const ThreadJobID jobID = m_jobIDCounter;
 	m_jobIDCounter = (m_jobIDCounter + 1) % (ThreadJobID_INVALID - 1);
@@ -133,7 +118,7 @@ void ThreadPoolManager::unlock() {
 }
 
 void ThreadPoolManager::createThreads() {
-	if (this == nullptr || m_threads.size() > 0) return;
+	if (m_threads.size() > 0) return;
 
 	// Get max hardware thread count.
 	static constexpr uint32_t minimumThreadCount = 4;
@@ -150,29 +135,31 @@ void ThreadPoolManager::createThreads() {
 
 	// Create threads.
 	for (uint32_t i = 0; i < targetThreadCount; i++)
-		m_threads.emplace_back(&threadLoop, this);
+		m_threads.emplace_back(&threadLoop, this, i + 1);
 }
 void ThreadPoolManager::terminateThreads() {
-	if (this == nullptr || m_threads.size() <= 0) return;
+	if (m_threads.size() <= 0) return;
 
 	{
 		// Set termination flag.
 		MutexLock lock(m_dispatchMutex);
 		m_terminateThreads = true;
+		// Notify all threads.
+		m_dispatchCondition.notify_all();
 	}
 
-	// Notify all threads.
-	m_dispatchCondition.notify_all();
-
-	// Join to all threads.
+	// Join + clear all threads.
 	for (size_t i = 0; i < m_threads.size(); i++)
 		if (m_threads[i].joinable()) m_threads[i].join();
 	m_threads.clear();
 
 	// Notify waiting.
 	m_waitCondition.notify_all();
+
+	// Debug log.
+	J_LOG("ThreadPool.cpp: Successfully cleared thread pool.");
 }
-void ThreadPoolManager::threadLoop() {
+void ThreadPoolManager::threadLoop(const uint32_t threadID) {
 	// Job storage.
 	ThreadJobID jobID;
 	ThreadJob* job;
