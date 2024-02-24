@@ -1,12 +1,13 @@
 #pragma vertex
 
-in uint v_packedVertex;
+out vec4 vertexColor;
+out float depth;
 
+in uint v_packedVertex;
 in vec3 i_position;
 
 uniform mat4 u_viewProjection;
-
-out vec4 vertexColor;
+uniform vec3 u_playerPosition;
 
 void main() {
 	// Get vertex information.
@@ -27,6 +28,11 @@ void main() {
 		1.0f
 	);
 	vertexColor = vec4(color.rgb, 1.0f);
+
+	// Calculate depth.
+	//vec3 diff = u_playerPosition - (position + i_position);
+	//depth = dot(diff, diff);
+	depth = distance(u_playerPosition, position + i_position);
 }
 
 #pragma fragment
@@ -34,8 +40,20 @@ void main() {
 out vec4 f_color;
 
 in vec4 vertexColor;
+in float depth;
+
+uniform float u_renderDistance;
+
+float getFogFactor(float d) {
+    const float fogMax = u_renderDistance * u_renderDistance;
+    const float fogMin = 50.0f * 50.0f;
+    return clamp(1 - (fogMax - d) / (fogMax - fogMin), 0.0f, 1.0f);
+}
 
 void main() {
+	const float fogAmount = getFogFactor(depth);
+
 	// Set color.
-	f_color = vertexColor;
+	const vec4 fogColor = vec4(0.45f, 0.6f, 1.0f, 1.0f);
+	f_color = mix(vertexColor, fogColor, fogAmount);
 }
