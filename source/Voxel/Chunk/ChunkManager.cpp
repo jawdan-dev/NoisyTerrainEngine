@@ -6,11 +6,16 @@
 ChunkManager::ChunkManager(VoxelManager* const voxelManager) :
 	m_voxelManager(voxelManager),
 	m_chunkMutex(), m_chunks(),
-	m_activeJobCooldown(0), m_activeJobMutex(), m_activeJobList(),
-	m_visibilityMutex(), m_visibilityQueue(), m_visibilityCenter(),
+	// Job stuff.
+	m_activeState(ManagerState::WaitForCooldown), m_waitState(ManagerState::None),
+	m_activeJobCooldown(0),
+	m_activeJobMutex(), m_activeJobList(),
+	// Upload stuff.
 	m_pendingModelsMutex(), m_pendingModelsList(),
-	m_initializationMutex(), m_placementMutex(), m_rebuildMutex(), m_drawMutex(), m_undrawMutex(),
-	m_initializationQueue(), m_placementQueue(), m_rebuildQueue(), m_drawQueue(), m_undrawQueue() {}
+	// State stuff.
+	m_initializationMutex(), m_placementMutex(), m_rebuildMutex(), m_visibilityMutex(), m_drawMutex(), m_undrawMutex(),
+	m_initializationQueue(), m_placementQueue(), m_rebuildQueue(), m_visibilityQueue(), m_drawQueue(), m_undrawQueue(),
+	m_visibilityCenter() {}
 ChunkManager::~ChunkManager() {}
 
 const VoxelID ChunkManager::getVoxel(const VoxelLocation& location) {
@@ -68,7 +73,7 @@ void ChunkManager::setVoxel(const VoxelLocation& location, const VoxelID voxelID
 	chunk->unlockPlacement();
 }
 
-void ChunkManager::process(const ChunkLocation& visibilityCenter) {
+void ChunkManager::process(const ChunkLocation& visibilityCenter, Shader& shader) {
 	// Set visibility center.
 	if (m_visibilityMutex.try_lock()) {
 		// Set center.
@@ -77,15 +82,14 @@ void ChunkManager::process(const ChunkLocation& visibilityCenter) {
 	}
 
 	// Check job cooldown.
-	m_activeJobCooldown -= Time.delta();
-	if (m_activeJobCooldown > 0) return;
+	if (m_activeJobCooldown > 0)
+		m_activeJobCooldown -= Time.delta();
 
-	// Grab locks.
+	// Thread safely.
 	bool locks[3];
 	if (!(locks[0] = m_chunkMutex.try_lock()) ||
 		!(locks[1] = m_activeJobMutex.try_lock()) ||
-		!(locks[2] = ThreadPool.tryLock()) ||
-		ThreadPool.getJobsActiveMut(m_activeJobList)) {
+		!(locks[2] = ThreadPool.tryLock())) {
 		// Failed, unlock.
 		if (locks[2]) ThreadPool.unlock();
 		if (locks[1]) m_activeJobMutex.unlock();
@@ -93,198 +97,277 @@ void ChunkManager::process(const ChunkLocation& visibilityCenter) {
 		return;
 	}
 
-	// Get chunk location check order.
-	static List<ChunkLocation> chunkLocations;
-	const size_t chunkViewDistanceChunkCount = (voxelChunkViewDistance * 2) * (voxelChunkViewDistance * 2);
-	if (chunkLocations.size() != chunkViewDistanceChunkCount) {
-		// Create list of chunks to load.
-		chunkLocations.clear();
-		for (VoxelInt x = -voxelChunkViewDistance; x < voxelChunkViewDistance; x++) {
-			for (VoxelInt z = -voxelChunkViewDistance; z < voxelChunkViewDistance; z++) {
-				chunkLocations.push_back(ChunkLocation(x, z));
-			}
-		}
-
-		// Sort into generation order.
-		struct LocationComparator {
-			inline bool operator() (const ChunkLocation& a, const ChunkLocation& b) {
-				return __max(abs(a.x()), abs(a.z())) < __max(abs(b.x()), abs(b.z()));
-			}
-		};
-		std::sort(chunkLocations.begin(), chunkLocations.end(), LocationComparator());
-
-		// Log.
-		J_LOG("ChunkManager.cpp: Render generation order created for %zu chunks.\n", chunkLocations.size());
-	}
-
-	// Initialize chunks.
-	size_t chunksRemaining = voxelChunkBatchSize;
-	for (size_t i = 0; i < chunkLocations.size() && chunksRemaining > 0; i++) {
-		const ChunkLocation location = m_visibilityCenter + chunkLocations[i];
-		Chunk* const chunk = getChunk(location);
-
-		if (chunk == nullptr || chunk->hasDrawn()) continue;
-
-		chunk->queueInitialization();
-		chunk->queueDraw();
-		chunksRemaining--;
-	}
-
-	// Job staging helper.
-	List<ThreadJobID> tempJobs;
-#	define StartStage(targetQueue, targetLock, jobFunction, nextJob) \
+#pragma region Macros
+#	define StageJobs(targetQueue, targetLock, ...) \
 		/* Enqueue creation job. */ \
 		m_activeJobList.push_back(ThreadPool.enqueueJob([this](){ \
 			/* Thread safety locks. */ \
 			targetLock.lock(); \
+			lockChunks(); \
 			m_activeJobMutex.lock(); \
 			ThreadPool.lock(); \
-			lockChunks(); \
 			for (auto it = targetQueue.begin(); it != targetQueue.end(); it++) { \
 				/* Get chunk. */ \
 				Chunk* const chunk = getChunk(*it); \
 				if (chunk == nullptr) continue; \
 				/* Start job. */ \
 				m_activeJobList.push_back(ThreadPool.enqueueJob([this, chunk]() { \
-					jobFunction; \
+					chunk->lockDetails(); \
+					__VA_ARGS__; \
+					chunk->unlockDetails(); \
 				})); \
 			} \
+			/* Free job locks. */ \
+			ThreadPool.unlock(); \
+			m_activeJobMutex.unlock(); \
+			unlockChunks(); \
 			/* Update details */ \
 			targetQueue.clear(); \
 			targetLock.unlock(); \
-			/* Queue up next job. */ \
-			nextJob \
-			/* Free job mutexes. */ \
-			unlockChunks(); \
-			ThreadPool.unlock(); \
-			m_activeJobMutex.unlock(); \
-		}, m_activeJobList));
+		}, m_activeJobList))
+#pragma endregion
 
-			// Stage jobs:
-	StartStage(
-		// Initialize.
-		m_initializationQueue, m_initializationMutex,
-		ARGS(chunk->forceInitialization()),
-		StartStage(
-			// Place.
-			m_placementQueue, m_placementMutex,
-			ARGS(chunk->lockPlacement(); chunk->forcePlacement(); chunk->unlockPlacement()),
-			StartStage(
+	// Perform as many states as possible.
+	ManagerState checkState = ManagerState::_Reserved;
+	while (checkState != m_activeState) {
+		// Update check state.
+		checkState = m_activeState;
+
+		// Handle state.
+		switch (m_activeState) {
+			case ManagerState::WaitForCooldown: {
+				if (m_activeJobCooldown > 0) break;
+
+				// Change state.
+				m_activeState = ManagerState::SelectBatch;
+				m_activeJobCooldown = c_activeJobCooldownMax;
+			} break;
+			case ManagerState::WaitForJobs: {
+				if (ThreadPool.getJobsActiveMut(m_activeJobList)) break;
+
+				// Update state.
+				m_activeState = m_waitState;
+				m_waitState = ManagerState::None;
+			} break;
+
+			case ManagerState::SelectBatch: {
+				// Get chunk location check order.
+				static List<ChunkLocation> chunkLocations;
+				const size_t chunkViewDistanceChunkCount = (voxelChunkViewDistance * 2) * (voxelChunkViewDistance * 2);
+				if (chunkLocations.size() != chunkViewDistanceChunkCount) {
+					// Create list of chunks to load.
+					chunkLocations.clear();
+					for (VoxelInt x = -voxelChunkViewDistance; x < voxelChunkViewDistance; x++) {
+						for (VoxelInt z = -voxelChunkViewDistance; z < voxelChunkViewDistance; z++) {
+							chunkLocations.push_back(ChunkLocation(x, z));
+						}
+					}
+
+					// Sort into generation order.
+					struct LocationComparator {
+						inline bool operator() (const ChunkLocation& a, const ChunkLocation& b) {
+							return __max(abs(a.x()), abs(a.z())) < __max(abs(b.x()), abs(b.z()));
+						}
+					};
+					std::sort(chunkLocations.begin(), chunkLocations.end(), LocationComparator());
+
+					// Log.
+					J_LOG("ChunkManager.cpp: Render generation order created for %zu chunks.\n", chunkLocations.size());
+				}
+
+				// Select batch.
+				size_t chunksRemaining = voxelChunkBatchSize;
+				for (size_t i = 0; i < chunkLocations.size() && chunksRemaining > 0; i++) {
+					// Get chunk.
+					const ChunkLocation location = m_visibilityCenter + chunkLocations[i];
+					Chunk* const chunk = getChunk(location);
+					if (chunk == nullptr) continue;
+
+					chunk->lockDetails();
+					if (!chunk->isDrawn()) {
+						// Queue draw + initialization.
+						chunk->queueInitialization();
+						chunk->queueRebuild();
+						chunk->queueDraw();
+						chunksRemaining--;
+					}
+					chunk->unlockDetails();
+				}
+
+				// Next state.
+				m_waitState = ManagerState::Initialization;
+			} break;
+
+			case ManagerState::Initialization: {
+				// Initialize.
+				StageJobs(m_initializationQueue, m_initializationMutex,
+					chunk->lockPlacement(); \
+					chunk->forceInitialization(); \
+					chunk->unlockPlacement();
+				);
+				// Next state.
+				m_waitState = ManagerState::Placement;
+			} break;
+			case ManagerState::Placement: {
+				// Initialize.
+				StageJobs(m_placementQueue, m_placementMutex,
+					chunk->lockPlacement(); \
+					chunk->forcePlacement(); \
+					chunk->unlockPlacement();
+				);
+				// Next state.
+				m_waitState = ManagerState::Rebuild;
+			} break;
+			case ManagerState::Rebuild: {
 				// Rebuild.
-				m_rebuildQueue, m_rebuildMutex,
-				ARGS(
+				StageJobs(m_rebuildQueue, m_rebuildMutex,
 					chunk->forceRebuild(); \
 					m_pendingModelsMutex.lock(); \
 					m_pendingModelsList.emplace(chunk->getModel()); \
 					m_pendingModelsMutex.unlock(); \
-					chunk->queueDraw()
-				),
+				);
+				// Next state.
+				m_waitState = ManagerState::Visibility;
+			} break;
+			case ManagerState::Visibility: {
+				// Check visibility.
 				m_activeJobList.push_back(ThreadPool.enqueueJob([this]() {
+					/* Thread safety locks. */
 					m_visibilityMutex.lock();
-					m_activeJobMutex.lock();
-					ThreadPool.lock();
 					lockChunks();
 					for (auto it = m_visibilityQueue.begin(); it != m_visibilityQueue.end(); it++) {
+						/* Get chunk. */
 						Chunk* const chunk = getChunk(*it);
 						if (chunk == nullptr) continue;
 
-						m_activeJobList.push_back(ThreadPool.enqueueJob([this, chunk]() {
-							const ChunkLocation diff = m_visibilityCenter - chunk->getChunkLocation();
-							const VoxelInt dist = __max(abs(diff.x()), abs(diff.z()));
-							if (dist <= voxelChunkViewDistance) {
+						/* Start check. */
+						chunk->lockDetails();
+						const ChunkLocation diff = m_visibilityCenter - chunk->getChunkLocation();
+						const VoxelInt dist = __max(abs(diff.x()), abs(diff.z()));
+						if (dist <= voxelChunkViewDistance) {
+							if (!chunk->isDrawn())
 								chunk->queueDraw();
-							} else {
+						} else {
+							if (chunk->isDrawn())
 								chunk->queueUndraw();
-							}
-							}));
+						}
+						chunk->unlockDetails();
 					}
+					/* Free job locks. */
 					unlockChunks();
-					ThreadPool.unlock();
-					m_activeJobMutex.unlock();
 					m_visibilityMutex.unlock();
-					}, m_activeJobList));
-	)));
-
-	// Safely threaded.
-	unlockChunks();
-	m_activeJobMutex.unlock();
-	ThreadPool.unlock();
-
-	// Update cooldown.
-	m_activeJobCooldown = activeJobCooldownMax;
-}
-void ChunkManager::upload() {
-	// Upload models.
-	if (m_pendingModelsMutex.try_lock()) {
-		for (auto it = m_pendingModelsList.begin(); it != m_pendingModelsList.end();) {
-			// Get model.
-			Model& model = **it;
-			if (model.tryLock()) {
-				// Upload.
-				if (!model.upload()) it = m_pendingModelsList.erase(it);
-				else it++;
-
-				// Unlock.
-				model.unlock();
-			} else {
-				it++;
-			}
-		}
-		m_pendingModelsMutex.unlock();
-	}
-}
-void ChunkManager::draw(Shader& shader) {
-	if (m_chunkMutex.try_lock()) {
-		// Undraw.
-		if (m_undrawMutex.try_lock()) {
-			m_visibilityMutex.lock();
-			// Undraw all in queue.
-			for (auto it = m_undrawQueue.begin(); it != m_undrawQueue.end(); it++) {
-				// Get chunk.
-				Chunk* const chunk = getChunk(*it);
-				if (chunk == nullptr) continue;
+					}, m_activeJobList)
+				);
+				// Next state.
+				m_waitState = ManagerState::Undraw;
+			} break;
+			case ManagerState::Undraw: {
+				if (!m_visibilityMutex.try_lock()) break;
+				if (!m_undrawMutex.try_lock()) {
+					m_visibilityMutex.unlock();
+					break;
+				}
 
 				// Undraw.
-				chunk->forceUndraw();
+				for (auto it = m_undrawQueue.begin(); it != m_undrawQueue.end(); it++) {
+					// Get chunk.
+					Chunk* const chunk = getChunk(*it);
+					if (chunk == nullptr) continue;
 
-				// Remove from visibility queue.
-				auto visibilityIt = m_visibilityQueue.find(*it);
-				if (visibilityIt != m_visibilityQueue.end())
-					m_visibilityQueue.erase(visibilityIt);
-			}
-			// Update details.
-			m_undrawQueue.clear();
+					// Undraw.
+					chunk->lockDetails();
+					chunk->forceUndraw();
+					chunk->unlockDetails();
 
-			// Unlock.
-			m_visibilityMutex.unlock();
-			m_undrawMutex.unlock();
-		}
+					// Remove from visibility queue.
+					auto visibilityIt = m_visibilityQueue.find(*it);
+					if (visibilityIt != m_visibilityQueue.end())
+						m_visibilityQueue.erase(visibilityIt);
+				}
+				// Update details.
+				m_undrawQueue.clear();
 
-		// Draw.
-		if (m_drawMutex.try_lock()) {
-			m_visibilityMutex.lock();
-			// Draw all in queue.
-			InstanceData instanceData(&shader);
-			for (auto it = m_drawQueue.begin(); it != m_drawQueue.end(); it++) {
-				// Get chunk.
-				Chunk* const chunk = getChunk(*it);
-				if (chunk == nullptr) continue;
+				// Unlock.
+				m_undrawMutex.unlock();
+				m_visibilityMutex.unlock();
+
+				// Next state.
+				m_activeState = ManagerState::_Draw;
+			} break;
+			case ManagerState::_Draw: {
+				if (!m_visibilityMutex.try_lock()) break;
+				if (!m_drawMutex.try_lock()) {
+					m_visibilityMutex.unlock();
+					break;
+				}
 
 				// Draw.
-				chunk->forceDraw(instanceData);
+				InstanceData instanceData(&shader);
+				for (auto it = m_drawQueue.begin(); it != m_drawQueue.end(); it++) {
+					// Get chunk.
+					Chunk* const chunk = getChunk(*it);
+					if (chunk == nullptr) continue;
 
-				// Add to visibility queue.
-				m_visibilityQueue.emplace(*it);
-			}
-			// Update details.
-			m_drawQueue.clear();
+					// Draw.
+					chunk->lockDetails();
+					chunk->forceDraw(instanceData);
+					chunk->unlockDetails();
+
+					// Add to visibility queue.
+					m_visibilityQueue.emplace(*it);
+				}
+				// Update details.
+				m_drawQueue.clear();
+
+				// Unlock.
+				m_drawMutex.unlock();
+				m_visibilityMutex.unlock();
+
+				// Next state.
+				m_waitState = ManagerState::WaitForCooldown;
+			} break;
+		}
+
+		// Check next state.
+		if (m_waitState != ManagerState::None) {
+			m_activeState = ManagerState::WaitForJobs;
+		}
+	}
+
+	// Clean up macros.
+#	undef StageJobs
+
+	// Safely threaded.
+	ThreadPool.unlock();
+	m_activeJobMutex.unlock();
+	m_chunkMutex.unlock();
+}
+void ChunkManager::upload() {
+	if (!m_pendingModelsMutex.try_lock()) return;
+	if (m_pendingModelsList.size() <= 0) {
+		m_pendingModelsMutex.unlock();
+		return;
+	}
+
+	// Get dynamic uplaod amount.
+	const size_t uploadAmount = __max(chunkUploadSpeed / m_pendingModelsList.size(), 20);
+
+	// Upload.
+	for (auto it = m_pendingModelsList.begin(); it != m_pendingModelsList.end();) {
+		// Get model.
+		Model& model = **it;
+		if (model.tryLock()) {
+			// Upload.
+			if (!model.upload(uploadAmount)) it = m_pendingModelsList.erase(it);
+			else it++;
 
 			// Unlock.
-			m_visibilityMutex.unlock();
-			m_drawMutex.unlock();
+			model.unlock();
+		} else {
+			it++;
 		}
-		m_chunkMutex.unlock();
 	}
+	m_pendingModelsMutex.unlock();
 }
 
 void ChunkManager::lockChunks() {

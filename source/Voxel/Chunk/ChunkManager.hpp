@@ -15,21 +15,37 @@ private:
 	Map<ChunkLocation, Chunk> m_chunks;
 
 private:
-	static constexpr float activeJobCooldownMax = 0.2f;
+	// Job stuff.
+	enum class ManagerState : uint8_t {
+		None = 0, _Reserved,
+
+		WaitForCooldown,
+		WaitForJobs,
+
+		SelectBatch,
+		Initialization,
+		Placement,
+		Rebuild,
+		Visibility,
+		Undraw,
+		_Draw
+	};
+	ManagerState m_activeState, m_waitState;
+	static constexpr float c_activeJobCooldownMax = 0.2f;
 	float m_activeJobCooldown;
 	Mutex m_activeJobMutex;
 	List<ThreadJobID> m_activeJobList;
-	Mutex m_visibilityMutex;
-	Set<ChunkLocation> m_visibilityQueue;
-	ChunkLocation m_visibilityCenter;
 
 private:
+	// Upload stuff.
 	Mutex m_pendingModelsMutex;
 	Set<Model*> m_pendingModelsList;
 
 private:
-	Mutex m_initializationMutex, m_placementMutex, m_rebuildMutex, m_drawMutex, m_undrawMutex;
-	Set<ChunkLocation> m_initializationQueue, m_placementQueue, m_rebuildQueue, m_drawQueue, m_undrawQueue;
+	// State stuff.
+	Mutex m_initializationMutex, m_placementMutex, m_rebuildMutex, m_visibilityMutex, m_drawMutex, m_undrawMutex;
+	Set<ChunkLocation> m_initializationQueue, m_placementQueue, m_visibilityQueue, m_rebuildQueue, m_drawQueue, m_undrawQueue;
+	ChunkLocation m_visibilityCenter;
 
 public:
 	ChunkManager(VoxelManager* const voxelManager);
@@ -46,9 +62,8 @@ public:
 	void setVoxel(const VoxelLocation& location, const VoxelID voxelID);
 
 public:
-	void process(const ChunkLocation& visibilityCenter);
+	void process(const ChunkLocation& visibilityCenter, Shader& shader);
 	void upload();
-	void draw(Shader& shader);
 
 public:
 	void lockChunks();

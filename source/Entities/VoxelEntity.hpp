@@ -14,6 +14,11 @@ public:
 
 public:
 	void onProcess() {
+		// Upload.
+		m_voxelManager.getChunkManager()->upload();
+	}
+
+	void onDraw() {
 		// Get player location.
 		const VoxelLocation playerLocation(
 			floorf(CameraEntity::activeCameraPosition.x()),
@@ -21,14 +26,8 @@ public:
 			floorf(CameraEntity::activeCameraPosition.z())
 		);
 
-		// Process.
-		m_voxelManager.getChunkManager()->process(playerLocation);
-		m_voxelManager.getChunkManager()->upload();
-	}
-
-	void onDraw() {
-		// Draw.
-		m_voxelManager.getChunkManager()->draw(m_terrainShader);
+		// Process + Draw.
+		m_voxelManager.getChunkManager()->process(playerLocation, m_terrainShader);
 
 		// Update view projection.
 		const ShaderUniform* const u_viewProjection = m_terrainShader.getUniform("u_viewProjection");

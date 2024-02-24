@@ -15,12 +15,12 @@ private:
 	ChunkManager* m_chunkManager;
 
 private:
-	bool m_initialized : 1, m_drawn : 1;
-	ChunkLocation m_location;
-	LayerReference* m_layers;
-	Model m_model;
+	const ChunkLocation m_location;
+	Mutex m_detailsMutex;
+	bool m_initialized, m_hasMesh, m_drawn;
 
 private:
+	LayerReference* m_layers;
 	struct PlacementInformation {
 		VoxelID m_voxelID;
 		bool m_force;
@@ -29,18 +29,25 @@ private:
 	Mutex m_placementMutex;
 	Map<VoxelLocation, PlacementInformation> m_placementQueue;
 
+private:
+	Model m_model;
+
 public:
 	Chunk(ChunkManager* const chunkManager, const ChunkLocation& location);
 	Chunk(const Chunk& other) = delete;
 	~Chunk();
 
 public:
-	J_GETTER_DIRECT(hasLoaded, m_initialized, bool);
-	J_GETTER_DIRECT(hasDrawn, m_drawn, bool);
+	J_GETTER_DIRECT(isLoaded, m_initialized, bool);
+	J_GETTER_DIRECT(isDrawn, m_drawn, bool);
 	const VoxelID getVoxel(const VoxelLocation& location);
 	J_GETTER_DIRECT(getChunkLocation, m_location, ChunkLocation&);
 	J_GETTER_DIRECT(getVoxelLocation, m_location, VoxelLocation);
 	J_GETTER_DIRECT_MUT(getModel, &m_model, Model* const);
+
+public:
+	void lockDetails();
+	void unlockDetails();
 
 public:
 	void queueInitialization() const;

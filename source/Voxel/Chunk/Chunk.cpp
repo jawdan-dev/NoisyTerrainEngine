@@ -10,11 +10,11 @@ Chunk::PlacementInformation::PlacementInformation(const VoxelID voxelID, const b
 
 Chunk::Chunk(ChunkManager* const chunkManager, const ChunkLocation& location) :
 	m_chunkManager(chunkManager),
-	m_initialized(false), m_drawn(false),
+	m_detailsMutex(),
+	m_initialized(false), m_hasMesh(false), m_drawn(false),
 	m_location(location),
-	m_layers(new LayerReference[voxelChunkSizeY]()),
-	m_model(),
-	m_placementMutex(), m_placementQueue() {}
+	m_layers(new LayerReference[voxelChunkSizeY]()), m_placementMutex(), m_placementQueue(),
+	m_model() {}
 Chunk::~Chunk() {
 	// Undraw.
 	forceUndraw();
@@ -42,6 +42,13 @@ const VoxelID Chunk::getVoxel(const VoxelLocation& location) {
 
 	// Get voxel.
 	return m_layers[location.y()].getVoxel(location.x(), location.z());
+}
+
+void Chunk::lockDetails() {
+	m_detailsMutex.lock();
+}
+void Chunk::unlockDetails() {
+	m_detailsMutex.unlock();
 }
 
 void Chunk::queueInitialization() const {
@@ -118,7 +125,6 @@ void Chunk::forceInitialization() {
 
 	// TODO: Move this elsewhere.
 	// Setup basic surface.
-	lockPlacement();
 	for (VoxelInt x = 0; x < voxelChunkSizeX; x++) {
 		for (VoxelInt z = 0; z < voxelChunkSizeZ; z++) {
 			VoxelInt lastAir = voxelChunkSizeY;
@@ -143,7 +149,6 @@ void Chunk::forceInitialization() {
 
 	// Queue placement.
 	if (m_placementQueue.size() > 0) queuePlacement();
-	unlockPlacement();
 
 	// Rebuild neighbours.
 	m_chunkManager->lockRebuild();
@@ -216,6 +221,12 @@ void Chunk::queueSetVoxel(const VoxelLocation& location, const VoxelID voxelID) 
 		std::forward_as_tuple(voxelID, true)
 	);
 }
+void Chunk::lockPlacement() {
+	m_placementMutex.lock();
+}
+void Chunk::unlockPlacement() {
+	m_placementMutex.unlock();
+}
 void Chunk::queuePlacement() const {
 	// Queue placement.
 	m_chunkManager->lockPlacement();
@@ -223,7 +234,7 @@ void Chunk::queuePlacement() const {
 	m_chunkManager->unlockPlacement();
 }
 void Chunk::forcePlacement() {
-	if (m_placementQueue.size() <= 0 || !m_initialized) return;
+	if (!m_initialized || m_placementQueue.size() <= 0) return;
 
 	// Get changed layers.
 	Map<VoxelInt, Layer> newLayers;
@@ -265,12 +276,6 @@ void Chunk::forcePlacement() {
 		// Update rebuild.
 		queueRebuild();
 	}
-}
-void Chunk::lockPlacement() {
-	m_placementMutex.lock();
-}
-void Chunk::unlockPlacement() {
-	m_placementMutex.unlock();
 }
 
 void Chunk::queueRebuild() const {
@@ -592,6 +597,9 @@ void Chunk::forceRebuild() {
 	// Unlock.
 	mesh.unlock();
 	m_model.unlock();
+
+	// Update details.
+	m_hasMesh = true;
 }
 
 void Chunk::queueDraw() const {
@@ -612,17 +620,6 @@ void Chunk::forceDraw(InstanceData& instanceData) {
 	// Draw chunk (statically).
 	Draw.draw(m_model, instanceData, this);
 
-	// Get mesh.
-	m_model.lock();
-	ModelMesh& mesh = m_model.getActiveMesh();
-	mesh.lock();
-	// Check if mesh has been made.
-	if (mesh.getRenderCount() <= 0)
-		queueRebuild();
-	// Unlock.
-	mesh.unlock();
-	m_model.unlock();
-
 	// Update details.
 	m_drawn = true;
 }
@@ -639,15 +636,21 @@ void Chunk::forceUndraw() {
 	// Undraw chunk.
 	Draw.undrawStatic(this);
 
-	// Get mesh.
-	m_model.lock();
-	ModelMesh& mesh = m_model.getActiveMesh();
-	mesh.lock();
-	// Clear mesh (its for the best).
-	mesh.clear();
-	// Unlock.
-	mesh.unlock();
-	m_model.unlock();
+	// Clear out mesh.
+	if (m_hasMesh) {
+		// Get mesh.
+		m_model.lock();
+		ModelMesh& mesh = m_model.getActiveMesh();
+		mesh.lock();
+		// Clear mesh (its for the best).
+		mesh.clear();
+		// Unlock.
+		mesh.unlock();
+		m_model.unlock();
+
+		// Update details.
+		m_hasMesh = false;
+	}
 
 	// Update details.
 	m_drawn = false;
