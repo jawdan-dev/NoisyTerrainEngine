@@ -8,8 +8,8 @@
 // Holy constants #1-#3: Voxel chunk size.
 static constexpr VoxelInt voxelChunkSizeX = 16, voxelChunkSizeY = 256, voxelChunkSizeZ = voxelChunkSizeX;
 
-// Holy constants #4-#5: Chunk generation speeds.
-static constexpr VoxelInt voxelChunkBatchSize = 10, voxelChunkViewDistance = 10;
+// Holy constants #4-#6: Chunk generation speeds.
+static constexpr VoxelInt voxelChunkBatchSize = 20, voxelChunkViewDistance = 16;
 
 // Holy constants #6: Chunk upload config.
 static constexpr size_t chunkUploadSpeed = 4000;
