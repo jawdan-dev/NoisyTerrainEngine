@@ -41,7 +41,7 @@ public:
 
 public:
 	void clear();
-	void upload(const size_t uploadMax = 200);
+	void upload(const size_t uploadMax = SIZE_MAX);
 
 public:
 	void lock();

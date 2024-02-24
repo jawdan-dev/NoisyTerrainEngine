@@ -9,13 +9,13 @@ void Model::load(const char* file) {
 	// TODO:
 	J_ERROR_EXIT("Model.cpp: Model loading not yet implemented.\n");
 }
-const bool Model::upload() {
+const bool Model::upload(const size_t uploadMax) {
 	// Get mesh.
 	ModelMesh& mesh = getInactiveMesh();
 
 	// Upload mesh.
 	mesh.lock();
-	mesh.upload();
+	mesh.upload(uploadMax);
 
 	// Get remaining upload.
 	const size_t remainingUpload = mesh.getRemainingUpload();

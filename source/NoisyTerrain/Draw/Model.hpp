@@ -25,7 +25,7 @@ public:
 
 public:
 	void load(const char* file);
-	const bool upload();
+	const bool upload(const size_t uploadMax = SIZE_MAX);
 
 public:
 	const bool tryLock();
