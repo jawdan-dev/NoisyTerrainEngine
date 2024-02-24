@@ -58,7 +58,7 @@ void Chunk::queueInitialization() const {
 	m_chunkManager->unlockInitialization();
 }
 void Chunk::forceInitialization() {
-	if (m_initialized) return;
+	if (isInitialized()) return;
 
 	// TODO: Move elsewhere (mainly for biome stuff).
 	// Noise settings.
@@ -234,7 +234,7 @@ void Chunk::queuePlacement() const {
 	m_chunkManager->unlockPlacement();
 }
 void Chunk::forcePlacement() {
-	if (!m_initialized || m_placementQueue.size() <= 0) return;
+	if (!isInitialized() || m_placementQueue.size() <= 0) return;
 
 	// Get changed layers.
 	Map<VoxelInt, Layer> newLayers;
@@ -285,7 +285,7 @@ void Chunk::queueRebuild() const {
 	m_chunkManager->unlockRebuild();
 }
 void Chunk::forceRebuild() {
-	if (!m_initialized) return;
+	if (!isInitialized()) return;
 
 	// Scan & meshing data / config.
 	static const VoxelLocation points[8] = {
@@ -378,17 +378,15 @@ void Chunk::forceRebuild() {
 						case 2: location.z() = a; location.x() = b; location.y() = c; break;
 					}
 
-					// Check if voxel solid.
-					const VoxelID voxel = getVoxel(location);
-					if (voxel == VoxelID::None) {
-						layerState[b + (c * scan[1])].m_id = VoxelID::None;
-						layerState[b + (c * scan[1]) + layerSize].m_id = VoxelID::None;
-						continue;
-					}
+					// Get active voxel.
+					const VoxelID activeVoxel = getVoxel(location);
 
 					// Set state id.
-					layerState[b + (c * scan[1])].m_id = voxel;
-					layerState[b + (c * scan[1]) + layerSize].m_id = voxel;
+					layerState[b + (c * scan[1])].m_id = activeVoxel;
+					layerState[b + (c * scan[1]) + layerSize].m_id = activeVoxel;
+
+					// Check if voxel solid.
+					if (activeVoxel == VoxelID::None) continue;
 
 					for (size_t layerSide = 0; layerSide < layerSides; layerSide++) {
 						// Get state information.
@@ -397,6 +395,7 @@ void Chunk::forceRebuild() {
 
 						// Get ambience information.
 						const VoxelInt(&check)[7] = checks[scan[layerSide + 4]];
+
 						// Ignore if voxel disabled.
 						const VoxelID checkVoxel = getVoxel(location + VoxelLocation(check[0], check[1], check[2]));
 						if (checkVoxel != VoxelID::None) {
@@ -468,6 +467,9 @@ void Chunk::forceRebuild() {
 						LayerState& activeState = layerData[layerIndex];
 						if (!activeState.isEnabled()) continue;
 
+						// Get face information.
+						const Vector3& faceColor = getVoxelColor(activeState.m_id);
+
 						// Initialize base size.
 						faceWidth = 1;
 						faceHeight = 1;
@@ -537,11 +539,10 @@ void Chunk::forceRebuild() {
 						voxelVertices.push_back(location + (points[check[6]] * faceMultiplier));
 
 						// Push colors.
-						const Vector3& color = getVoxelColor(getVoxel(location));
-						colors.push_back(color * activeState.getAmbience(0));
-						colors.push_back(color * activeState.getAmbience(1));
-						colors.push_back(color * activeState.getAmbience(2));
-						colors.push_back(color * activeState.getAmbience(3));
+						colors.push_back(faceColor * activeState.getAmbience(0));
+						colors.push_back(faceColor * activeState.getAmbience(1));
+						colors.push_back(faceColor * activeState.getAmbience(2));
+						colors.push_back(faceColor * activeState.getAmbience(3));
 
 						// Push indices.
 						if (activeState.shouldFlipAmbience()) {
@@ -609,7 +610,7 @@ void Chunk::queueDraw() const {
 	m_chunkManager->unlockDraw();
 }
 void Chunk::forceDraw(InstanceData& instanceData) {
-	if (!m_initialized || m_drawn) return;
+	if (!isInitialized() || isVisible()) return;
 
 	// Set instance data.
 	const VoxelLocation location = getVoxelLocation();
@@ -631,7 +632,7 @@ void Chunk::queueUndraw() const {
 	m_chunkManager->unlockUndraw();
 }
 void Chunk::forceUndraw() {
-	if (!m_drawn) return;
+	if (!isVisible()) return;
 
 	// Undraw chunk.
 	Draw.undrawStatic(this);

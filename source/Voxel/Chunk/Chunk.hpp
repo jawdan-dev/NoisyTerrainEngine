@@ -38,8 +38,8 @@ public:
 	~Chunk();
 
 public:
-	J_GETTER_DIRECT(isLoaded, m_initialized, bool);
-	J_GETTER_DIRECT(isDrawn, m_drawn, bool);
+	J_GETTER_DIRECT(isInitialized, m_initialized, bool);
+	J_GETTER_DIRECT(isVisible, m_drawn, bool);
 	const VoxelID getVoxel(const VoxelLocation& location);
 	J_GETTER_DIRECT(getChunkLocation, m_location, ChunkLocation&);
 	J_GETTER_DIRECT(getVoxelLocation, m_location, VoxelLocation);

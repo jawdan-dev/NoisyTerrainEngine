@@ -153,12 +153,12 @@ void ChunkManager::process(const ChunkLocation& visibilityCenter, Shader& shader
 			case ManagerState::SelectBatch: {
 				// Get chunk location check order.
 				static List<ChunkLocation> chunkLocations;
-				const size_t chunkViewDistanceChunkCount = (voxelChunkViewDistance * 2) * (voxelChunkViewDistance * 2);
+				const VoxelInt chunkViewDistanceChunkCount = ((voxelChunkViewDistance * 2) + 1) * ((voxelChunkViewDistance * 2) + 1);
 				if (chunkLocations.size() != chunkViewDistanceChunkCount) {
 					// Create list of chunks to load.
 					chunkLocations.clear();
-					for (VoxelInt x = -voxelChunkViewDistance; x < voxelChunkViewDistance; x++) {
-						for (VoxelInt z = -voxelChunkViewDistance; z < voxelChunkViewDistance; z++) {
+					for (VoxelInt x = -voxelChunkViewDistance; x <= voxelChunkViewDistance; x++) {
+						for (VoxelInt z = -voxelChunkViewDistance; z <= voxelChunkViewDistance; z++) {
 							chunkLocations.push_back(ChunkLocation(x, z));
 						}
 					}
@@ -172,7 +172,11 @@ void ChunkManager::process(const ChunkLocation& visibilityCenter, Shader& shader
 					std::sort(chunkLocations.begin(), chunkLocations.end(), LocationComparator());
 
 					// Log.
-					J_LOG("ChunkManager.cpp: Render generation order created for %zu chunks.\n", chunkLocations.size());
+					if (chunkLocations.size() != chunkViewDistanceChunkCount) {
+						J_WARNING("ChunkManager.cpp: Failed to generate render generation order, instead got %zu of expected %zu chunks.\n", chunkLocations.size(), chunkViewDistanceChunkCount);
+					} else {
+						J_LOG("ChunkManager.cpp: Render generation order created for %zu chunks.\n", chunkLocations.size());
+					}
 				}
 
 				// Select batch.
@@ -184,11 +188,13 @@ void ChunkManager::process(const ChunkLocation& visibilityCenter, Shader& shader
 					if (chunk == nullptr) continue;
 
 					chunk->lockDetails();
-					if (!chunk->isDrawn()) {
+					if (!chunk->isVisible()) {
 						// Queue draw + initialization.
 						chunk->queueInitialization();
 						chunk->queueRebuild();
 						chunk->queueDraw();
+
+						// Update details.
 						chunksRemaining--;
 					}
 					chunk->unlockDetails();
@@ -235,27 +241,41 @@ void ChunkManager::process(const ChunkLocation& visibilityCenter, Shader& shader
 					/* Thread safety locks. */
 					m_visibilityMutex.lock();
 					lockChunks();
+					m_activeJobMutex.lock();
+					ThreadPool.lock();
 					for (auto it = m_visibilityQueue.begin(); it != m_visibilityQueue.end(); it++) {
 						/* Get chunk. */
 						Chunk* const chunk = getChunk(*it);
 						if (chunk == nullptr) continue;
 
-						/* Start check. */
-						chunk->lockDetails();
-						const ChunkLocation diff = m_visibilityCenter - chunk->getChunkLocation();
-						const VoxelInt dist = __max(abs(diff.x()), abs(diff.z()));
-						if (dist <= voxelChunkViewDistance) {
-							if (!chunk->isDrawn())
-								chunk->queueDraw();
-						} else {
-							if (chunk->isDrawn())
-								chunk->queueUndraw();
-						}
-						chunk->unlockDetails();
+						m_activeJobList.push_back(ThreadPool.enqueueJob([this, chunk]() {
+							// Lock.
+							chunk->lockDetails();
+
+							// Get distance.
+							const ChunkLocation diff = chunk->getChunkLocation() - m_visibilityCenter;
+							const VoxelInt dist = __max(abs(diff.x()), abs(diff.z()));
+
+							// Handle if shown or hidden.
+							if (dist <= voxelChunkViewDistance) {
+								if (!chunk->isVisible()) chunk->queueDraw();
+							} else {
+								if (chunk->isVisible()) chunk->queueUndraw();
+							}
+
+							// Unlock.
+							chunk->unlockDetails();
+							}));
 					}
+					// Unlock visibility mutex.
+					ThreadPool.enqueueJob([this]() {
+						m_visibilityMutex.unlock();
+					}, m_activeJobList);
+
 					/* Free job locks. */
+					ThreadPool.unlock();
+					m_activeJobMutex.unlock();
 					unlockChunks();
-					m_visibilityMutex.unlock();
 					}, m_activeJobList)
 				);
 				// Next state.
