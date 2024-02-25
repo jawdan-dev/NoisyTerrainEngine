@@ -1,6 +1,6 @@
 # CMake.
 binaries/
-build/
+build*/
 
 # IDE.
 .vscode/

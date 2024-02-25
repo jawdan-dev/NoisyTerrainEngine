@@ -26,7 +26,7 @@ void InstanceData::setData(const char* attributeName, const void* const data, co
 
 	// Set data.
 	memcpy(
-		m_data + attributeInformation->m_dataOffset,
+		(void*)((uintptr_t)m_data + attributeInformation->m_dataOffset),
 		data,
 		dataSize
 	);

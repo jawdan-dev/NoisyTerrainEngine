@@ -128,7 +128,7 @@ void ChunkManager::process(const ChunkLocation& visibilityCenter, Shader& shader
 #pragma endregion
 
 	// Perform as many states as possible.
-	ManagerState checkState = ManagerState::_Reserved;
+	ManagerState checkState = ManagerState::None;
 	while (checkState != m_activeState) {
 		// Update check state.
 		checkState = m_activeState;
@@ -153,7 +153,8 @@ void ChunkManager::process(const ChunkLocation& visibilityCenter, Shader& shader
 			case ManagerState::SelectBatch: {
 				// Get chunk location check order.
 				static List<ChunkLocation> chunkLocations;
-				const VoxelInt chunkViewDistanceChunkCount = ((voxelChunkViewDistance * 2) + 1) * ((voxelChunkViewDistance * 2) + 1);
+				const VoxelInt chunkViewDistanceChunk1DCount = ((voxelChunkViewDistance * 2) + 1);
+				const VoxelInt chunkViewDistanceChunkCount = chunkViewDistanceChunk1DCount * chunkViewDistanceChunk1DCount;
 				if (chunkLocations.size() != chunkViewDistanceChunkCount) {
 					// Create list of chunks to load.
 					chunkLocations.clear();
@@ -173,7 +174,7 @@ void ChunkManager::process(const ChunkLocation& visibilityCenter, Shader& shader
 
 					// Log.
 					if (chunkLocations.size() != chunkViewDistanceChunkCount) {
-						J_WARNING("ChunkManager.cpp: Failed to generate render generation order, instead got %zu of expected %zu chunks.\n", chunkLocations.size(), chunkViewDistanceChunkCount);
+						J_WARNING("ChunkManager.cpp: Failed to generate render generation order, instead got %zu of expected %lld chunks.\n", chunkLocations.size(), chunkViewDistanceChunkCount);
 					} else {
 						J_LOG("ChunkManager.cpp: Render generation order created for %zu chunks.\n", chunkLocations.size());
 					}

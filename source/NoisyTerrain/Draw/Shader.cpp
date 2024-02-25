@@ -111,7 +111,7 @@ void readShaderSource(const char* sourcePath, const char* defaultVersion, String
 	// Load shader from file.
 	const String filePath = String("Assets/") + sourcePath;
 	FILE* file = fopen(filePath.c_str(), "rb");
-	if (file == nullptr) J_ERROR_EXIT("Shader.cpp: Failed to open shader %s.", filePath.c_str());
+	if (file == nullptr) J_ERROR_EXIT("Shader.cpp: Failed to open shader %s.\n", filePath.c_str());
 
 	// Interpret file.
 	char c = '\0';
@@ -156,13 +156,13 @@ void readShaderSource(const char* sourcePath, const char* defaultVersion, String
 const GLuint compileProgram(const char* vertexSource, const char* fragmentSource) {
 	// Compile vertex shader.
 	GLuint vertexShader = compileShader(vertexSource, GL_VERTEX_SHADER);
-	if (vertexShader == 0) J_ERROR_EXIT("Shader.cpp: Failed to compile vertex shader.");
+	if (vertexShader == 0) J_ERROR_EXIT("Shader.cpp: Failed to compile vertex shader.\n");
 
 	// Compile fragment shader.
 	GLuint fragmentShader = compileShader(fragmentSource, GL_FRAGMENT_SHADER);
 	if (fragmentShader == 0) {
 		glDeleteShader(vertexShader);
-		J_ERROR_EXIT("Shader.cpp: Failed to compile fragment shader.");
+		J_ERROR_EXIT("Shader.cpp: Failed to compile fragment shader.\n");
 	}
 
 	// Compile program.
@@ -302,7 +302,7 @@ void Shader::load() {
 
 	// Compile shader.
 	m_shaderProgram = compileProgram(vertexSource.c_str(), fragmentSource.c_str());
-	if (m_shaderProgram == 0) J_ERROR_EXIT("Shader.cpp: Failed to compile shader %s.", m_file);
+	if (m_shaderProgram == 0) J_ERROR_EXIT("Shader.cpp: Failed to compile shader %s.\n", m_file);
 
 	// Load attributes.
 	loadShaderAttributes(

@@ -6,8 +6,10 @@ add_executable(NoisyTerrain ${CMAKE_CURRENT_SOURCE_DIR}/source/NoisyTerrain/Core
 file(GLOB_RECURSE SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp)
 target_sources(NoisyTerrain PRIVATE ${SRC_FILES})
 
+# Set output directory.
+set(TARGET_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/binaries/desktop)
+
 # Target Properties.
-set(TARGET_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/binaries)
 set_target_properties(
     NoisyTerrain
     PROPERTIES

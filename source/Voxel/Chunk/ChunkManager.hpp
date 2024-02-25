@@ -17,7 +17,7 @@ private:
 private:
 	// Job stuff.
 	enum class ManagerState : uint8_t {
-		None = 0, _Reserved,
+		None = 0,
 
 		WaitForCooldown,
 		WaitForJobs,

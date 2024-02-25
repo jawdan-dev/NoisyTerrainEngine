@@ -52,7 +52,7 @@ public:
 	void terminateThreads();
 
 private:
-	void threadLoop(const uint32_t _threadID);
+	void threadLoop();
 	const ThreadJobID takeJob();
 	void completeJob(const ThreadJobID jobID);
 };

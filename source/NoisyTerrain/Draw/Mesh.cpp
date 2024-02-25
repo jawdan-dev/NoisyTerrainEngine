@@ -148,7 +148,7 @@ void ModelMesh::upload(const size_t uploadMax) {
 					GL_ARRAY_BUFFER,
 					uploadOffset + staticOffset,
 					dataSize,
-					data.getData() + dataOffset
+					(void*)((uintptr_t)data.getData() + dataOffset)
 				);
 			}
 		}

@@ -49,7 +49,7 @@ const bool insertData(
 	// Insert data.
 	if (index == dataCount) {
 		// Data location.
-		void* const targetData = data + (index * dataSize);
+		void* const targetData = (void*)((uintptr_t)data + (index * dataSize));
 		// Compare data.
 		if (memcmp(targetData, newData, dataSize)) {
 			// Update data.
@@ -58,8 +58,8 @@ const bool insertData(
 		}
 	} else {
 		// Data location.
-		void* const targetData = data + ((index + 1) * dataSize);
-		void* const sourceData = data + (index * dataSize);
+		void* const targetData = (void*)((uintptr_t)data + ((index + 1) * dataSize));
+		void* const sourceData = (void*)((uintptr_t)data + (index * dataSize));
 		const size_t moveLength = dataCount - (index + 1);
 
 		// Move data.
@@ -82,8 +82,8 @@ const bool removeData(
 	if (index >= dataCount) return false;
 
 	// Data location.
-	void* const targetData = data + (index * dataSize);
-	void* const sourceData = data + ((index + 1) * dataSize);
+	void* const targetData = (void*)((uintptr_t)data + (index * dataSize));
+	void* const sourceData = (void*)((uintptr_t)data + ((index + 1) * dataSize));
 	const size_t moveLength = dataCount - (index + 1);
 
 	// Move data.
@@ -94,8 +94,7 @@ const bool removeData(
 }
 
 void RenderInstance::addInstance(InstanceData& instanceData, const void* const staticID) {
-	if (this == nullptr ||
-		instanceData.getShader() != m_shader ||
+	if (instanceData.getShader() != m_shader ||
 		!resize(m_instanceData, m_instanceDataCount, m_instanceCount + 1, m_shader->getTotalInstanceSize())) return;
 
 	if (staticID == nullptr) {
@@ -221,7 +220,7 @@ void RenderInstance::updateVAO(ModelMesh& mesh) {
 }
 
 void RenderInstance::draw(const Matrix4& viewProjection) {
-	if (this == nullptr || m_instanceCount <= 0) return;
+	if (m_instanceCount <= 0) return;
 
 	// Get active mesh.
 	m_model->lock();

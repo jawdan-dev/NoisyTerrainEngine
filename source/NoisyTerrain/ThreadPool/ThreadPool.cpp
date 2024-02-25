@@ -121,21 +121,24 @@ void ThreadPoolManager::createThreads() {
 	if (m_threads.size() > 0) return;
 
 	// Get max hardware thread count.
-	static constexpr uint32_t minimumThreadCount = 4;
-	uint32_t targetThreadCount = std::thread::hardware_concurrency();
+	static constexpr size_t minimumThreadCount = 4;
+	size_t targetThreadCount = (size_t)std::thread::hardware_concurrency();
 	if (targetThreadCount <= 0) {
-		// Set to default.
+		// Set to default & report.
 		targetThreadCount = minimumThreadCount;
-		// Report error.
-		J_WARNING("ThreadPool.cpp: Unable to get hardware concurrency information, defaulting to %llu threads.\n", targetThreadCount);
-	} else {
-		targetThreadCount = __max(minimumThreadCount, targetThreadCount);
-		J_LOG("ThreadPool.cpp: Thread pool created with %llu threads.\n", targetThreadCount);
+		J_WARNING("ThreadPool.cpp: Unable to get hardware concurrency information, defaulting to %zu threads.\n", targetThreadCount);
+	} else if (targetThreadCount < minimumThreadCount) {
+		// Set to default & report.
+		J_WARNING("ThreadPool.cpp: Hardware concurrency of %zu is less than minimum, defaulting to %zu threads.\n", targetThreadCount, minimumThreadCount);
+		targetThreadCount = minimumThreadCount;
 	}
 
 	// Create threads.
-	for (uint32_t i = 0; i < targetThreadCount; i++)
-		m_threads.emplace_back(&threadLoop, this, i + 1);
+	for (size_t i = 0; i < targetThreadCount; i++)
+		m_threads.emplace_back(&ThreadPoolManager::threadLoop, this);
+
+	// Report success.
+	J_LOG("ThreadPool.cpp: Thread pool created with %zu threads.\n", targetThreadCount);
 }
 void ThreadPoolManager::terminateThreads() {
 	if (m_threads.size() <= 0) return;
@@ -159,7 +162,7 @@ void ThreadPoolManager::terminateThreads() {
 	// Debug log.
 	J_LOG("ThreadPool.cpp: Successfully cleared thread pool.");
 }
-void ThreadPoolManager::threadLoop(const uint32_t threadID) {
+void ThreadPoolManager::threadLoop() {
 	// Job storage.
 	ThreadJobID jobID;
 	ThreadJob* job;

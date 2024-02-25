@@ -51,8 +51,6 @@ void DrawManager::drawAll() {
 }
 
 void DrawManager::draw(Model& model, InstanceData& instanceData, const void* const staticID) {
-	if (this == nullptr) return;
-
 	// Find render instance.
 	const RenderKey key(instanceData.getShader(), &model);
 	auto it = m_renderInstances.find(key);
