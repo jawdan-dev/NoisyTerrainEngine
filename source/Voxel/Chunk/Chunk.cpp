@@ -71,7 +71,7 @@ void Chunk::forceInitialization() {
 
 	// TODO: Base terrain settings on biome.
 	// Terrain settings.
-	VoxelInt range = 128;
+	VoxelInt range = voxelChunkSizeY / 2;
 	VoxelInt midHeight = voxelChunkSizeY / 2;
 
 	// Get base location.
@@ -353,8 +353,38 @@ void Chunk::forceRebuild() {
 #	pragma pack(pop)
 
 	// Mesh storage.
-	List<VoxelLocation> voxelVertices;
-	List<Vector3> colors;
+	struct VertexInformation {
+		VoxelLocation m_location;
+		uint8_t m_ambience : 2, m_normal : 3;
+		VoxelTextureIndex m_textureIndex : 8;
+
+		VertexInformation(
+			const VoxelLocation& location,
+			const uint8_t ambience, const uint8_t normal,
+			const VoxelTextureIndex textureIndex
+		) :
+			m_location(location),
+			m_ambience(ambience), m_normal(normal),
+			m_textureIndex(textureIndex) {}
+
+		const uint32_t getPackedVertex() {
+			// 00000000000000000000000000000000
+			// rrrrgggggbbbbzzzzzyyyyyyyyyxxxxx
+			// iiiiiiiiiUVaazzzzzyyyyyyyyyxxxxx
+			// iiiiiiiiNNNaazzzzzyyyyyyyyyxxxxx
+			return
+				// Vertex information.
+				((m_location.x() & 0x1f) << 0) |
+				((m_location.y() & 0x1ff) << 5) |
+				((m_location.z() & 0x1f) << 14) |
+				// Shading information.
+				((m_ambience & 0b11) << 19) |
+				((m_normal & 0b111) << 21) |
+				// Texture information.
+				((m_textureIndex & 0xff) << 24);
+		};
+	};
+	List<VertexInformation> vertices;
 	List<uint32_t> indices;
 
 	// It's Meshin' time.
@@ -467,8 +497,8 @@ void Chunk::forceRebuild() {
 						LayerState& activeState = layerData[layerIndex];
 						if (!activeState.isEnabled()) continue;
 
-						// Get face information.
-						const Vector3& faceColor = getVoxelColor(activeState.m_id);
+						// Store voxel information.
+						const VoxelID faceVoxelID = activeState.m_id;
 
 						// Initialize base size.
 						faceWidth = 1;
@@ -531,36 +561,40 @@ void Chunk::forceRebuild() {
 							} break;
 						}
 
-						// Push vertices.
-						const uint32_t io = voxelVertices.size();
-						voxelVertices.push_back(location + (points[check[3]] * faceMultiplier));
-						voxelVertices.push_back(location + (points[check[4]] * faceMultiplier));
-						voxelVertices.push_back(location + (points[check[5]] * faceMultiplier));
-						voxelVertices.push_back(location + (points[check[6]] * faceMultiplier));
+						// Get texture information.
+						VoxelTextureIndex faceTextureIndex;
+						switch (scan[3]) {
+							// Top.
+							case 1: faceTextureIndex = !layerSide ? getVoxelTextureIndexTop(faceVoxelID) :  getVoxelTextureIndexBottom(faceVoxelID); break;
+							// Sides.
+							case 0:
+							case 2: faceTextureIndex = getVoxelTextureIndexSide(faceVoxelID); break;
+						}
 
-						// Push colors.
-						colors.push_back(faceColor * activeState.getAmbience(0));
-						colors.push_back(faceColor * activeState.getAmbience(1));
-						colors.push_back(faceColor * activeState.getAmbience(2));
-						colors.push_back(faceColor * activeState.getAmbience(3));
+						// Push vertices.
+						const uint32_t indexStart = vertices.size();
+						vertices.emplace_back(location + (points[check[3]] * faceMultiplier), activeState[0], scan[3] | (layerSide << 2), faceTextureIndex);
+						vertices.emplace_back(location + (points[check[4]] * faceMultiplier), activeState[1], scan[3] | (layerSide << 2), faceTextureIndex);
+						vertices.emplace_back(location + (points[check[5]] * faceMultiplier), activeState[2], scan[3] | (layerSide << 2), faceTextureIndex);
+						vertices.emplace_back(location + (points[check[6]] * faceMultiplier), activeState[3], scan[3] | (layerSide << 2), faceTextureIndex);
 
 						// Push indices.
 						if (activeState.shouldFlipAmbience()) {
 							// CW ordering starting from index 1.
-							indices.push_back(io + 1);
-							indices.push_back(io + 2);
-							indices.push_back(io + 0);
-							indices.push_back(io + 3);
-							indices.push_back(io + 0);
-							indices.push_back(io + 2);
+							indices.push_back(indexStart + 1);
+							indices.push_back(indexStart + 2);
+							indices.push_back(indexStart + 0);
+							indices.push_back(indexStart + 3);
+							indices.push_back(indexStart + 0);
+							indices.push_back(indexStart + 2);
 						} else {
 							// CW ordering starting from index 0.
-							indices.push_back(io + 0);
-							indices.push_back(io + 1);
-							indices.push_back(io + 3);
-							indices.push_back(io + 2);
-							indices.push_back(io + 3);
-							indices.push_back(io + 1);
+							indices.push_back(indexStart + 0);
+							indices.push_back(indexStart + 1);
+							indices.push_back(indexStart + 3);
+							indices.push_back(indexStart + 2);
+							indices.push_back(indexStart + 3);
+							indices.push_back(indexStart + 1);
 						}
 					}
 				}
@@ -569,22 +603,10 @@ void Chunk::forceRebuild() {
 		delete[] layerState;
 	}
 
-	// Generate packed vertices.
+	// Get packed vertices.
 	List<uint32_t> packedVertices;
-	for (size_t i = 0; i < voxelVertices.size() && i < colors.size(); i++) {
-		// 00000000000000000000000000000000
-		// rrrrgggggbbbbzzzzzyyyyyyyyyxxxxx
-		packedVertices.push_back(
-			// Vertex information.
-			((voxelVertices[i].x() & 0x1f) << 0) |
-			((voxelVertices[i].y() & 0x1ff) << 5) |
-			((voxelVertices[i].z() & 0x1f) << 14) |
-			// Color information.
-			(((uint32_t)(colors[i].x() * (float)0xf) & 0xf) << 19) |
-			(((uint32_t)(colors[i].y() * (float)0x1f) & 0x1f) << 23) |
-			(((uint32_t)(colors[i].z() * (float)0xf) & 0xf) << 28)
-		);
-	}
+	for (size_t i = 0; i < vertices.size(); i++)
+		packedVertices.push_back(vertices[i].getPackedVertex());
 
 	// Get mesh.
 	m_model.lock();

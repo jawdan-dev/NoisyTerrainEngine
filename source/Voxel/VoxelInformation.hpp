@@ -9,7 +9,7 @@
 static constexpr VoxelInt voxelChunkSizeX = 16, voxelChunkSizeY = 256, voxelChunkSizeZ = voxelChunkSizeX;
 
 // Holy constants #4-#6: Chunk generation speeds.
-static constexpr VoxelInt voxelChunkBatchSize = 20, voxelChunkViewDistance = 16;
+static constexpr VoxelInt voxelChunkBatchSize = 32, voxelChunkViewDistance = 16;
 
 // Holy constants #6: Chunk upload config.
 static constexpr size_t chunkUploadSpeed = 4000;
@@ -19,8 +19,7 @@ static constexpr VoxelInt worldMaxHorizontalBound = 50;
 
 //////////////////////////////////////////////////////////////////////////////////////
 
-typedef uint8_t VoxelIDType;
-enum class VoxelID : VoxelIDType {
+enum class VoxelID : uint8_t {
 	None = 0,
 
 	// All the blocks.
@@ -35,6 +34,9 @@ enum class VoxelID : VoxelIDType {
 	Last
 };
 
-const Vector3 getVoxelColor(const VoxelID voxelID);
+typedef uint8_t VoxelTextureIndex;
+const VoxelTextureIndex getVoxelTextureIndexTop(const VoxelID voxelID);
+const VoxelTextureIndex getVoxelTextureIndexSide(const VoxelID voxelID);
+const VoxelTextureIndex getVoxelTextureIndexBottom(const VoxelID voxelID);
 
 //////////////////////////////////////////////////////////////////////////////////////
