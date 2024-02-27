@@ -46,6 +46,7 @@ private:
 	Mutex m_initializationMutex, m_placementMutex, m_rebuildMutex, m_visibilityMutex, m_drawMutex, m_undrawMutex;
 	Set<ChunkLocation> m_initializationQueue, m_placementQueue, m_visibilityQueue, m_rebuildQueue, m_drawQueue, m_undrawQueue;
 	ChunkLocation m_visibilityCenter;
+	bool m_visibilityChanged;
 
 public:
 	ChunkManager(VoxelManager* const voxelManager);

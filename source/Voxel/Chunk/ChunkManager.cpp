@@ -15,7 +15,7 @@ ChunkManager::ChunkManager(VoxelManager* const voxelManager) :
 	// State stuff.
 	m_initializationMutex(), m_placementMutex(), m_rebuildMutex(), m_visibilityMutex(), m_drawMutex(), m_undrawMutex(),
 	m_initializationQueue(), m_placementQueue(), m_rebuildQueue(), m_visibilityQueue(), m_drawQueue(), m_undrawQueue(),
-	m_visibilityCenter() {}
+	m_visibilityCenter(), m_visibilityChanged(false) {}
 ChunkManager::~ChunkManager() {}
 
 const VoxelID ChunkManager::getVoxel(const VoxelLocation& location) {
@@ -76,8 +76,13 @@ void ChunkManager::setVoxel(const VoxelLocation& location, const VoxelID voxelID
 void ChunkManager::process(const ChunkLocation& visibilityCenter, Shader& shader) {
 	// Set visibility center.
 	if (m_visibilityMutex.try_lock()) {
-		// Set center.
-		m_visibilityCenter = visibilityCenter;
+		if (m_visibilityCenter != visibilityCenter) {
+			// Set center.
+			m_visibilityCenter = visibilityCenter;
+
+			// Set to update checks.
+			m_visibilityChanged = true;
+		}
 		m_visibilityMutex.unlock();
 	}
 
@@ -244,34 +249,43 @@ void ChunkManager::process(const ChunkLocation& visibilityCenter, Shader& shader
 					lockChunks();
 					m_activeJobMutex.lock();
 					ThreadPool.lock();
-					for (auto it = m_visibilityQueue.begin(); it != m_visibilityQueue.end(); it++) {
-						/* Get chunk. */
-						Chunk* const chunk = getChunk(*it);
-						if (chunk == nullptr) continue;
+					if (m_visibilityChanged) {
+						// Check visibilty.
+						for (auto it = m_visibilityQueue.begin(); it != m_visibilityQueue.end(); it++) {
+							/* Get chunk. */
+							Chunk* const chunk = getChunk(*it);
+							if (chunk == nullptr) continue;
 
-						m_activeJobList.push_back(ThreadPool.enqueueJob([this, chunk]() {
-							// Lock.
-							chunk->lockDetails();
+							m_activeJobList.push_back(ThreadPool.enqueueJob([this, chunk]() {
+								// Lock.
+								chunk->lockDetails();
 
-							// Get distance.
-							const ChunkLocation diff = chunk->getChunkLocation() - m_visibilityCenter;
-							const VoxelInt dist = __max(abs(diff.x()), abs(diff.z()));
+								// Get distance.
+								const ChunkLocation diff = chunk->getChunkLocation() - m_visibilityCenter;
+								const VoxelInt dist = __max(abs(diff.x()), abs(diff.z()));
 
-							// Handle if shown or hidden.
-							if (dist <= voxelChunkViewDistance) {
-								if (!chunk->isVisible()) chunk->queueDraw();
-							} else {
-								if (chunk->isVisible()) chunk->queueUndraw();
-							}
+								// Handle if shown or hidden.
+								if (dist <= voxelChunkViewDistance) {
+									if (!chunk->isVisible()) chunk->queueDraw();
+								} else {
+									if (chunk->isVisible()) chunk->queueUndraw();
+								}
 
-							// Unlock.
-							chunk->unlockDetails();
-							}));
-					}
-					// Unlock visibility mutex.
-					ThreadPool.enqueueJob([this]() {
+								// Unlock.
+								chunk->unlockDetails();
+								}));
+						}
+
+						// Update details.
+						m_visibilityChanged = false;
+
+						// Unlock visibility mutex.
+						ThreadPool.enqueueJob([this]() {
+							m_visibilityMutex.unlock();
+						}, m_activeJobList);
+					} else {
 						m_visibilityMutex.unlock();
-					}, m_activeJobList);
+					}
 
 					/* Free job locks. */
 					ThreadPool.unlock();
