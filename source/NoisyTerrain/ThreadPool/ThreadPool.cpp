@@ -192,9 +192,11 @@ void ThreadPoolManager::threadLoop() {
 			// Run job.
 			job->process();
 
-			// Complete job.
-			MutexLock lock(m_dispatchMutex);
-			completeJob(jobID);
+			{
+				// Complete job.
+				MutexLock lock(m_dispatchMutex);
+				completeJob(jobID);
+			}
 		}
 	}
 }
