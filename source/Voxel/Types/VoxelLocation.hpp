@@ -32,6 +32,8 @@ public:
 	const VoxelLocation operator *(const VoxelLocation& other) const;
 
 	const bool operator <(const VoxelLocation& other) const;
+	const bool operator ==(const VoxelLocation& other) const;
+	const bool operator !=(const VoxelLocation& other) const;
 
 public:
 	operator ChunkLocation() const;

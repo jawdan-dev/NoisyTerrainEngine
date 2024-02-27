@@ -42,6 +42,12 @@ const bool VoxelLocation::operator <(const VoxelLocation& other) const {
 	if (m_y != other.m_y) return m_y < other.m_y;
 	return m_z < other.m_z;
 }
+const bool VoxelLocation::operator ==(const VoxelLocation& other) const {
+	return m_x == other.m_x && m_y == other.m_y && m_z == other.m_z;
+}
+const bool VoxelLocation::operator !=(const VoxelLocation& other) const {
+	return m_x != other.m_x || m_y != other.m_y || m_z != other.m_z;
+}
 
 VoxelLocation::operator ChunkLocation() const {
 	return ChunkLocation(
