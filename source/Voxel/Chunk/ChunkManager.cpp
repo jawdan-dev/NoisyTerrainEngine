@@ -244,53 +244,51 @@ void ChunkManager::process(const ChunkLocation& visibilityCenter, Shader& shader
 			case ManagerState::Visibility: {
 				// Check visibility.
 				m_activeJobList.push_back(ThreadPool.enqueueJob([this]() {
-					/* Thread safety locks. */
 					m_visibilityMutex.lock();
-					lockChunks();
-					m_activeJobMutex.lock();
-					ThreadPool.lock();
 					if (m_visibilityChanged) {
+						/* Thread safety locks. */
+						lockChunks();
+						m_activeJobMutex.lock();
+						ThreadPool.lock();
+
 						// Check visibilty.
+						const ChunkLocation visibilityCenter(m_visibilityCenter);
 						for (auto it = m_visibilityQueue.begin(); it != m_visibilityQueue.end(); it++) {
 							/* Get chunk. */
 							Chunk* const chunk = getChunk(*it);
 							if (chunk == nullptr) continue;
 
-							m_activeJobList.push_back(ThreadPool.enqueueJob([this, chunk]() {
-								// Lock.
-								chunk->lockDetails();
+							// Lock chunk.
+							chunk->lockDetails();
 
-								// Get distance.
-								const ChunkLocation diff = chunk->getChunkLocation() - m_visibilityCenter;
-								const VoxelInt dist = __max(abs(diff.x()), abs(diff.z()));
+							// Get distance.
+							const ChunkLocation diff = chunk->getChunkLocation() - visibilityCenter;
+							const VoxelInt dist = __max(abs(diff.x()), abs(diff.z()));
 
-								// Handle if shown or hidden.
-								if (dist <= voxelChunkViewDistance) {
-									if (!chunk->isVisible()) chunk->queueDraw();
-								} else {
-									if (chunk->isVisible()) chunk->queueUndraw();
+							// Handle if shown or hidden.
+							if (dist <= voxelChunkViewDistance) {
+								if (!chunk->isVisible()) {
+									chunk->queueDraw();
 								}
+							} else {
+								if (chunk->isVisible()) {
+									chunk->queueUndraw();
+								}
+							}
 
-								// Unlock.
-								chunk->unlockDetails();
-								}));
+							// Unlock chunk.
+							chunk->unlockDetails();
 						}
 
 						// Update details.
 						m_visibilityChanged = false;
 
-						// Unlock visibility mutex.
-						ThreadPool.enqueueJob([this]() {
-							m_visibilityMutex.unlock();
-						}, m_activeJobList);
-					} else {
-						m_visibilityMutex.unlock();
+						/* Free job locks. */
+						ThreadPool.unlock();
+						m_activeJobMutex.unlock();
+						unlockChunks();
 					}
-
-					/* Free job locks. */
-					ThreadPool.unlock();
-					m_activeJobMutex.unlock();
-					unlockChunks();
+					m_visibilityMutex.unlock();
 					}, m_activeJobList)
 				);
 				// Next state.
