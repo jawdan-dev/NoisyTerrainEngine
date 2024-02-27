@@ -39,30 +39,12 @@ void Texture::loadBMP(FILE* const file) {
 	BitmapFileHeader fileHeader;
 	BitmapError(fread(&fileHeader, sizeof(fileHeader), 1, file) < 1, "Failed to read Bitmap header.\n");
 
-	J_WARNING("File Header:\n");
-	J_LOG("Identity: %c%c\n", (char)fileHeader.m_identity[0], (char)fileHeader.m_identity[1]);
-	J_LOG("File size: %u\n", fileHeader.m_fileSize);
-	J_LOG("Image data offset: %u\n", fileHeader.m_imageDataOffset);
-
 	// Data validation.
 	BitmapError(*(uint16_t*)fileHeader.m_identity != ('B' | ('M' << 8)), "Bitmap Identity invalid. Recieved '%c%c' instead of the expected 'BM'.\n", (char)fileHeader.m_identity[0], (char)fileHeader.m_identity[1]);
 
 	// Read info header.
 	BitmapInfoHeader infoHeader;
 	BitmapError(fread(&infoHeader, sizeof(infoHeader), 1, file) < 1, "Failed to read Bitmap header.\n");
-
-	J_WARNING("Info Header:\n");
-	J_LOG("headerSize: %lu\n", infoHeader.m_headerSize);
-	J_LOG("width: %li\n", infoHeader.m_width);
-	J_LOG("height: %li\n", infoHeader.m_height);
-	J_LOG("colorPlanes: %lu\n", infoHeader.m_colorPlanes);
-	J_LOG("bitsPerPixel: %lu\n", infoHeader.m_bitsPerPixel);
-	J_LOG("compressionMethod: %lu\n", infoHeader.m_compressionMethod);
-	J_LOG("imageSize: %lu\n", infoHeader.m_imageSize);
-	J_LOG("horizontalResolution: %lu\n", infoHeader.m_horizontalResolution);
-	J_LOG("verticalResolution: %lu\n", infoHeader.m_verticalResolution);
-	J_LOG("colorPaletteSize: %lu\n", infoHeader.m_colorPaletteSize);
-	J_LOG("colorPaletteImportantColors: %lu\n", infoHeader.m_colorPaletteImportantColors);
 
 	// Data validation.
 	BitmapError(infoHeader.m_colorPlanes != 1, "Found %u color planes. Must be 1.\n", infoHeader.m_colorPlanes);
@@ -104,12 +86,6 @@ void Texture::loadBMP(FILE* const file) {
 			while (bitFieldHeader.m_bitFields[1] && !(bitFieldHeader.m_bitFields[1] & (0b1 << gOffset))) gOffset++;
 			while (bitFieldHeader.m_bitFields[2] && !(bitFieldHeader.m_bitFields[2] & (0b1 << bOffset))) bOffset++;
 			while (bitFieldHeader.m_bitFields[3] && !(bitFieldHeader.m_bitFields[3] & (0b1 << aOffset))) aOffset++;
-
-			J_WARNING("BitFields:\n");
-			J_LOG("r: %.8x\n", bitFieldHeader.m_bitFields[0]);
-			J_LOG("g: %.8x\n", bitFieldHeader.m_bitFields[1]);
-			J_LOG("b: %.8x\n", bitFieldHeader.m_bitFields[2]);
-			J_LOG("a: %.8x\n", bitFieldHeader.m_bitFields[3]);
 
 			// Seek data start.
 			fseek(file, fileHeader.m_imageDataOffset, SEEK_SET);
