@@ -7,6 +7,11 @@ WindowManager::WindowManager() :
 	m_x(0), m_y(0), m_width(0), m_height(0),
 	m_threadPool(), m_time(), m_input(), m_draw(),
 	m_entityManager() {
+	// Error logging.
+	glfwSetErrorCallback([](int errorCode, const char* description) {
+		J_ERROR("Window.cpp: GLFW Error %i: %s\n", errorCode, description);
+	});
+
 	// GLFW init.
 	if (!glfwInit()) J_ERROR_EXIT("Window.cpp: Failed to initialize window.\n");
 
