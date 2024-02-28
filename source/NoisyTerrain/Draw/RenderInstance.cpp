@@ -15,16 +15,11 @@ RenderInstance::~RenderInstance() {
 	if (m_instanceData != nullptr) free(m_instanceData);
 }
 
-const size_t binarySize(const size_t x) {
-	size_t a = 1;
-	while (a < x) a <<= 1;
-	return a;
-}
 const bool resize(void*& currentData, size_t& currentDataCount, const size_t dataCount, const size_t dataSize) {
-	if (currentDataCount > dataCount) return true;
+	if (currentDataCount > dataCount || dataCount == 0) return true;
 
 	// Get new target size.
-	const size_t newSize = binarySize(dataCount) * dataSize;
+	const size_t newSize = Math::binarySize(dataCount) * dataSize;
 
 	// Realloc data.
 	void* newData = realloc(currentData, newSize);
