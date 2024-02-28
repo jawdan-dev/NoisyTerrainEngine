@@ -32,9 +32,9 @@ public:
 	void onDraw() {
 		// Get player location.
 		const VoxelLocation playerLocation(
-			floorf(CameraEntity::activeCameraPosition.x()),
+			Math::floor(CameraEntity::activeCameraPosition.x()),
 			0,
-			floorf(CameraEntity::activeCameraPosition.z())
+			Math::floor(CameraEntity::activeCameraPosition.z())
 		);
 
 		// Process + Draw.
@@ -51,7 +51,7 @@ public:
 		glUseProgram(m_terrainShader.getProgram());
 		if (u_viewProjection != nullptr) glUniformMatrix4fv(u_viewProjection->m_location, 1, GL_FALSE, Draw.getViewProjection().getData());
 		if (u_playerPosition != nullptr) glUniform3f(u_playerPosition->m_location, CameraEntity::activeCameraPosition.x(), CameraEntity::activeCameraPosition.y(), CameraEntity::activeCameraPosition.z());
-		if (u_renderDistance != nullptr) glUniform1f(u_renderDistance->m_location, __max((voxelChunkViewDistance - 1) * __min(voxelChunkSizeX, voxelChunkSizeZ), 1.0f));
+		if (u_renderDistance != nullptr) glUniform1f(u_renderDistance->m_location, Math::max<float>((voxelChunkViewDistance - 1) * Math::min(voxelChunkSizeX, voxelChunkSizeZ), 1.0f));
 		if (u_voxelTexture != nullptr) glUniform1i(u_voxelTexture->m_location, atlasTextureSlot);
 		if (u_voxelTextureSize != nullptr) glUniform2f(u_voxelTextureSize->m_location, 4.0f, 4.0f);
 		glUseProgram(0);

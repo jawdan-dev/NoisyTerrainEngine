@@ -23,9 +23,9 @@ public:
 		if (moveAmount.lengthSquared() > 0 || lookAmount.lengthSquared() > 0) {
 			// Update position.
 			const float moveSpeed = Input.getKey(GLFW_KEY_LEFT_SHIFT) ? 50.0f : Input.getKey(GLFW_KEY_LEFT_ALT) ? 5.0f : 15.0f;
-			position.x() += ((cosf(rotation.y()) * moveAmount.x()) + (-sinf(rotation.y()) * moveAmount.z())) * moveSpeed * Time.delta();;
+			position.x() += ((Math::cos(rotation.y()) * moveAmount.x()) + (-Math::sin(rotation.y()) * moveAmount.z())) * moveSpeed * Time.delta();;
 			position.y() += moveAmount.y() * moveSpeed * Time.delta();
-			position.z() += ((-sinf(rotation.y()) * moveAmount.x()) + (-cosf(rotation.y()) * moveAmount.z())) * moveSpeed * Time.delta();;
+			position.z() += ((-Math::sin(rotation.y()) * moveAmount.x()) + (-Math::cos(rotation.y()) * moveAmount.z())) * moveSpeed * Time.delta();;
 			activeCameraPosition = position;
 
 			// Update rotation.

@@ -172,7 +172,7 @@ void ChunkManager::process(const ChunkLocation& visibilityCenter, Shader& shader
 					// Sort into generation order.
 					struct LocationComparator {
 						inline bool operator() (const ChunkLocation& a, const ChunkLocation& b) {
-							return __max(abs(a.x()), abs(a.z())) < __max(abs(b.x()), abs(b.z()));
+							return Math::max(abs(a.x()), abs(a.z())) < Math::max(abs(b.x()), abs(b.z()));
 						}
 					};
 					std::sort(chunkLocations.begin(), chunkLocations.end(), LocationComparator());
@@ -263,7 +263,7 @@ void ChunkManager::process(const ChunkLocation& visibilityCenter, Shader& shader
 
 							// Get distance.
 							const ChunkLocation diff = chunk->getChunkLocation() - visibilityCenter;
-							const VoxelInt dist = __max(abs(diff.x()), abs(diff.z()));
+							const VoxelInt dist = Math::max(abs(diff.x()), abs(diff.z()));
 
 							// Handle if shown or hidden.
 							if (dist <= voxelChunkViewDistance) {
@@ -383,7 +383,7 @@ void ChunkManager::upload() {
 	}
 
 	// Get dynamic uplaod amount.
-	const size_t uploadAmount = __max(chunkUploadSpeed / m_pendingModelsList.size(), 20);
+	const size_t uploadAmount = Math::max<size_t>(chunkUploadSpeed / m_pendingModelsList.size(), 20);
 
 	// Upload.
 	for (auto it = m_pendingModelsList.begin(); it != m_pendingModelsList.end();) {

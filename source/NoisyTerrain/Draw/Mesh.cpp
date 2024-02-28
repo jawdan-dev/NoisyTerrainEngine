@@ -76,7 +76,7 @@ void ModelMesh::upload(const size_t uploadMax) {
 			m_activeOffsets.emplace(it->first, m_activeStride);
 			// Update details.
 			m_activeStride += it->second.getDataStride();
-			bufferCount = __max(bufferCount, it->second.getDataLength());
+			bufferCount = Math::max(bufferCount, it->second.getDataLength());
 		}
 
 		// Get buffer size.
@@ -125,7 +125,7 @@ void ModelMesh::upload(const size_t uploadMax) {
 		glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
 
 		// Upload data to GPU.
-		const size_t uploadAmount = __min(m_VBOUploadRemaining, uploadMax);
+		const size_t uploadAmount = Math::min(m_VBOUploadRemaining, uploadMax);
 		for (auto it = m_data.begin(); it != m_data.end(); it++) {
 			// Get data.
 			const StaticData& data = it->second;
@@ -167,7 +167,7 @@ void ModelMesh::upload(const size_t uploadMax) {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
 
 		// Upload data to GPU.
-		const size_t uploadAmount = __min(m_EBOUploadRemaining, uploadMax - (uploadMax % 3));
+		const size_t uploadAmount = Math::min(m_EBOUploadRemaining, uploadMax - (uploadMax % 3));
 
 		// Copy data.
 		glBufferSubData(
