@@ -6,16 +6,15 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 // Holy constants #1-#3: Voxel chunk size.
-static constexpr VoxelInt voxelChunkSizeX = 16, voxelChunkSizeY = 256, voxelChunkSizeZ = voxelChunkSizeX;
+static constexpr VoxelInt voxelChunkSizeX = 28, voxelChunkSizeY = 256, voxelChunkSizeZ = voxelChunkSizeX;
 
-// Holy constants #4-#6: Chunk generation speeds.
-static constexpr VoxelInt voxelChunkBatchSize = 32, voxelChunkViewDistance = 16;
-
-// Holy constants #6: Chunk upload config.
+// Holy constants #4-#5: Chunk generation config.
+static constexpr VoxelInt voxelChunkBatchSize = 20, voxelChunkViewDistance = 10;
+// Holy constants #6: Chunk upload speed.
 static constexpr size_t chunkUploadSpeed = 4000;
 
-// Demonic constraints #1-#2: World boundaries.
-static constexpr VoxelInt worldMaxHorizontalBound = 50;
+// Demonic constraints #1: World boundary.
+static constexpr VoxelInt worldMaxHorizontalBound = 800 / Math::min(voxelChunkSizeX, voxelChunkSizeZ);
 
 //////////////////////////////////////////////////////////////////////////////////////
 
