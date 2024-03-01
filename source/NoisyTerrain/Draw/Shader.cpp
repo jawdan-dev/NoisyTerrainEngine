@@ -11,38 +11,6 @@ Shader::~Shader() {
 	if (m_shaderProgram) glDeleteProgram(m_shaderProgram);
 }
 
-const GLuint compileShader(const char* source, const GLenum shaderType) {
-	// Create shader.
-	GLuint shader = glCreateShader(shaderType);
-	if (shader == 0) return 0;
-
-	// Attach source.
-	glShaderSource(shader, 1, &source, NULL);
-
-	// Compile.
-	glCompileShader(shader);
-
-	// Get compilation status.
-	int success;
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		// Output error.
-		char infoLog[512];
-		glGetShaderInfoLog(shader, 512, NULL, infoLog);
-		switch (shaderType) {
-			case GL_VERTEX_SHADER: J_WARNING("Shader.cpp: Vertex shader compilation failed:\n%s\n", infoLog); break;
-			case GL_GEOMETRY_SHADER: J_WARNING("Shader.cpp: Geometry shader compilation failed:\n%s\n", infoLog); break;
-			case GL_FRAGMENT_SHADER: J_WARNING("Shader.cpp: Fragment shader compilation failed:\n%s\n", infoLog); break;
-		}
-
-		// Cleanup.
-		glDeleteShader(shader);
-		return 0;
-	};
-
-	return shader;
-}
-
 const size_t Shader::getTotalInstanceSize() {
 	load();
 	return m_instanceTotalSize;
@@ -122,8 +90,8 @@ void readShaderSource(const char* sourcePath, const char* defaultVersion, String
 		while (!feof(file) && c != '\n') {
 			const size_t r = fread(&c, sizeof(c), 1, file);
 			// Add to line.
-			if (r > 0) line += c;
-			else break;
+			if (r <= 0) break;
+			else if (c != '\r') line += c;
 		}
 		c = '\0';
 
@@ -150,8 +118,45 @@ void readShaderSource(const char* sourcePath, const char* defaultVersion, String
 	}
 
 	// Add version to source.
-	vertexSource.insert(0, targetVersion.c_str());
-	fragmentSource.insert(0, targetVersion.c_str());
+	if (vertexSource.size() > 0) vertexSource.insert(0, targetVersion.c_str());
+	if (fragmentSource.size() > 0) fragmentSource.insert(0, targetVersion.c_str());
+}
+const GLuint compileShader(const char* source, const GLenum shaderType) {
+	// Check source length.
+	if (strlen(source) == 0) {
+		J_WARNING("Shader.cpp: No shader source found.\n");
+		return 0;
+	}
+
+	// Create shader.
+	GLuint shader = glCreateShader(shaderType);
+	if (shader == 0) return 0;
+
+	// Attach source.
+	glShaderSource(shader, 1, &source, NULL);
+
+	// Compile.
+	glCompileShader(shader);
+
+	// Get compilation status.
+	int success;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+	if (!success) {
+		// Output error.
+		char infoLog[512];
+		glGetShaderInfoLog(shader, 512, NULL, infoLog);
+		switch (shaderType) {
+			case GL_VERTEX_SHADER: J_WARNING("Shader.cpp: Vertex shader compilation failed:\n%s\n", infoLog); break;
+			case GL_GEOMETRY_SHADER: J_WARNING("Shader.cpp: Geometry shader compilation failed:\n%s\n", infoLog); break;
+			case GL_FRAGMENT_SHADER: J_WARNING("Shader.cpp: Fragment shader compilation failed:\n%s\n", infoLog); break;
+		}
+
+		// Cleanup.
+		glDeleteShader(shader);
+		return 0;
+	};
+
+	return shader;
 }
 const GLuint compileProgram(const char* vertexSource, const char* fragmentSource) {
 	// Compile vertex shader.
