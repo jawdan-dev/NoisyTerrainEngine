@@ -7,6 +7,7 @@ class LayerManager {
 private:
 	Mutex m_layerLock;
 	Map<Layer, size_t> m_layers;
+	bool m_disabled;
 
 public:
 	LayerManager();
@@ -20,6 +21,7 @@ public:
 public:
 	void addLayerReference(const Layer& layer);
 	void removeLayerReference(const Layer& layer);
+	void disable();
 
 public:
 	void lock();

@@ -1,10 +1,12 @@
 #include "LayerManager.hpp"
 
 LayerManager::LayerManager() :
-	m_layerLock(), m_layers() {}
+	m_layerLock(), m_layers(), m_disabled(false) {}
 LayerManager::~LayerManager() {}
 
 const LayerReference LayerManager::createLayerReference(const Layer& layer) {
+	if (m_disabled) return LayerReference(nullptr, nullptr);
+
 	// Find layer.
 	auto it = m_layers.find(layer);
 	if (it == m_layers.end())
@@ -18,6 +20,8 @@ const LayerReference LayerManager::createLayerReference(const Layer& layer) {
 }
 
 void LayerManager::addLayerReference(const Layer& layer) {
+	if (m_disabled) return;
+
 	// Find layer.
 	auto it = m_layers.find(layer);
 	if (it == m_layers.end())
@@ -27,6 +31,8 @@ void LayerManager::addLayerReference(const Layer& layer) {
 	it->second++;
 }
 void LayerManager::removeLayerReference(const Layer& layer) {
+	if (m_disabled) return;
+
 	// Find layer.
 	auto it = m_layers.find(layer);
 	if (it == m_layers.end()) {
@@ -40,6 +46,9 @@ void LayerManager::removeLayerReference(const Layer& layer) {
 
 	// Remove reference.
 	m_layers.erase(it);
+}
+void LayerManager::disable() {
+	m_disabled = true;
 }
 
 void LayerManager::lock() {
