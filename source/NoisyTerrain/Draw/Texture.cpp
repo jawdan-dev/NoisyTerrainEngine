@@ -57,7 +57,7 @@ void Texture::load() {
 
 	// Close file.
 	fclose(file);
-#	undef EXTENSION;
+#	undef EXTENSION
 
 	// Error check.
 	if (m_texture == 0) J_ERROR_EXIT("Texture.cpp: Failed to load texture %s.\n", m_file);
