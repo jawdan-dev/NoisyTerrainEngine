@@ -59,8 +59,8 @@ public:
 	Chunk* const getChunk(const ChunkLocation& location);
 
 public:
-	void trySetVoxel(const VoxelLocation& location, const VoxelID voxelID);
-	void setVoxel(const VoxelLocation& location, const VoxelID voxelID);
+	void trySetVoxel(const VoxelLocation& location, const VoxelID voxelID, const bool queue = true);
+	void setVoxel(const VoxelLocation& location, const VoxelID voxelID, const bool queue = true);
 
 public:
 	void process(const ChunkLocation& visibilityCenter, Shader& shader);

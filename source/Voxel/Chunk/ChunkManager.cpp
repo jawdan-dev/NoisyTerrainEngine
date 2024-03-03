@@ -52,7 +52,7 @@ Chunk* const ChunkManager::getChunk(const ChunkLocation& location) {
 	return &it->second;
 }
 
-void ChunkManager::trySetVoxel(const VoxelLocation& location, const VoxelID voxelID) {
+void ChunkManager::trySetVoxel(const VoxelLocation& location, const VoxelID voxelID, const bool queue) {
 	// Get chunk.
 	Chunk* const chunk = getChunk(location);
 	if (chunk == nullptr) return;
@@ -60,9 +60,10 @@ void ChunkManager::trySetVoxel(const VoxelLocation& location, const VoxelID voxe
 	// Set voxel.
 	chunk->lockPlacement();
 	chunk->queueTrySetVoxel(location.getRelativeLocation(), voxelID);
+	if (queue) chunk->queuePlacement();
 	chunk->unlockPlacement();
 }
-void ChunkManager::setVoxel(const VoxelLocation& location, const VoxelID voxelID) {
+void ChunkManager::setVoxel(const VoxelLocation& location, const VoxelID voxelID, const bool queue) {
 	// Get chunk.
 	Chunk* const chunk = getChunk(location);
 	if (chunk == nullptr) return;
@@ -70,6 +71,7 @@ void ChunkManager::setVoxel(const VoxelLocation& location, const VoxelID voxelID
 	// Set voxel.
 	chunk->lockPlacement();
 	chunk->queueSetVoxel(location.getRelativeLocation(), voxelID);
+	if (queue) chunk->queuePlacement();
 	chunk->unlockPlacement();
 }
 
