@@ -2,13 +2,13 @@
 #include <Engine/Core/Core.hpp>
 
 #include <Voxel/Chunk/Chunk.hpp>
-#include <Engine/ThreadPool/ThreadJob.hpp>
 
 class VoxelManager;
 
 class ChunkManager {
 private:
 	VoxelManager* const m_voxelManager;
+	ThreadPoolManager m_threadPool;
 
 private:
 	Mutex m_chunkMutex;
@@ -54,6 +54,7 @@ public:
 	~ChunkManager();
 
 public:
+	J_GETTER_DIRECT_MUT(getThreadPool, m_threadPool, ThreadPoolManager&);
 	J_GETTER_DIRECT_MUT(getVoxelManager, m_voxelManager, VoxelManager* const);
 	const VoxelID getVoxel(const VoxelLocation& location);
 	Chunk* const getChunk(const ChunkLocation& location);

@@ -1,10 +1,9 @@
 #include "ChunkManager.hpp"
 
 #include <Engine/Time/Time.hpp>
-#include <Engine/ThreadPool/ThreadPool.hpp>
 
 ChunkManager::ChunkManager(VoxelManager* const voxelManager) :
-	m_voxelManager(voxelManager),
+	m_voxelManager(voxelManager), m_threadPool("ChunkManager"),
 	m_chunkMutex(), m_chunks(),
 	// Job stuff.
 	m_activeState(ManagerState::WaitForCooldown), m_waitState(ManagerState::None),
@@ -96,9 +95,9 @@ void ChunkManager::process(const ChunkLocation& visibilityCenter, Shader& shader
 	bool locks[3];
 	if (!(locks[0] = m_chunkMutex.try_lock()) ||
 		!(locks[1] = m_activeJobMutex.try_lock()) ||
-		!(locks[2] = ThreadPool.tryLock())) {
+		!(locks[2] = m_threadPool.tryLock())) {
 		// Failed, unlock.
-		if (locks[2]) ThreadPool.unlock();
+		if (locks[2]) m_threadPool.unlock();
 		if (locks[1]) m_activeJobMutex.unlock();
 		if (locks[0]) m_chunkMutex.unlock();
 		return;
@@ -107,25 +106,25 @@ void ChunkManager::process(const ChunkLocation& visibilityCenter, Shader& shader
 #pragma region Macros
 #	define StageJobs(targetQueue, targetLock, ...) \
 		/* Enqueue creation job. */ \
-		m_activeJobList.push_back(ThreadPool.enqueueJob([this](){ \
+		m_activeJobList.push_back(m_threadPool.enqueueJob([this](){ \
 			/* Thread safety locks. */ \
 			targetLock.lock(); \
 			lockChunks(); \
 			m_activeJobMutex.lock(); \
-			ThreadPool.lock(); \
+			m_threadPool.lock(); \
 			for (auto it = targetQueue.begin(); it != targetQueue.end(); it++) { \
 				/* Get chunk. */ \
 				Chunk* const chunk = getChunk(*it); \
 				if (chunk == nullptr) continue; \
 				/* Start job. */ \
-				m_activeJobList.push_back(ThreadPool.enqueueJob([this, chunk]() { \
+				m_activeJobList.push_back(m_threadPool.enqueueJob([this, chunk]() { \
 					chunk->lockDetails(); \
 					__VA_ARGS__; \
 					chunk->unlockDetails(); \
 				})); \
 			} \
 			/* Free job locks. */ \
-			ThreadPool.unlock(); \
+			m_threadPool.unlock(); \
 			m_activeJobMutex.unlock(); \
 			unlockChunks(); \
 			/* Update details */ \
@@ -150,7 +149,7 @@ void ChunkManager::process(const ChunkLocation& visibilityCenter, Shader& shader
 				m_activeJobCooldown = c_activeJobCooldownMax;
 			} break;
 			case ManagerState::WaitForJobs: {
-				if (ThreadPool.getJobsActiveMut(m_activeJobList)) break;
+				if (m_threadPool.getJobsActiveMut(m_activeJobList)) break;
 
 				// Update state.
 				m_activeState = m_waitState;
@@ -245,13 +244,13 @@ void ChunkManager::process(const ChunkLocation& visibilityCenter, Shader& shader
 			} break;
 			case ManagerState::Visibility: {
 				// Check visibility.
-				m_activeJobList.push_back(ThreadPool.enqueueJob([this]() {
+				m_activeJobList.push_back(m_threadPool.enqueueJob([this]() {
 					m_visibilityMutex.lock();
 					if (m_visibilityChanged) {
 						/* Thread safety locks. */
 						lockChunks();
 						m_activeJobMutex.lock();
-						ThreadPool.lock();
+						m_threadPool.lock();
 
 						// Check visibilty.
 						const ChunkLocation visibilityCenter(m_visibilityCenter);
@@ -286,7 +285,7 @@ void ChunkManager::process(const ChunkLocation& visibilityCenter, Shader& shader
 						m_visibilityChanged = false;
 
 						/* Free job locks. */
-						ThreadPool.unlock();
+						m_threadPool.unlock();
 						m_activeJobMutex.unlock();
 						unlockChunks();
 					}
@@ -373,7 +372,7 @@ void ChunkManager::process(const ChunkLocation& visibilityCenter, Shader& shader
 #	undef StageJobs
 
 	// Safely threaded.
-	ThreadPool.unlock();
+	m_threadPool.unlock();
 	m_activeJobMutex.unlock();
 	m_chunkMutex.unlock();
 }

@@ -5,7 +5,7 @@ J_SINGLETON_DEF(WindowManager);
 WindowManager::WindowManager() :
 	m_window(nullptr),
 	m_x(0), m_y(0), m_width(0), m_height(0),
-	m_threadPool(), m_time(), m_input(), m_draw(),
+	m_threadPool("Window"), m_time(), m_input(), m_draw(),
 	m_entityManager() {
 	// Error logging.
 	glfwSetErrorCallback([](int errorCode, const char* description) {
@@ -109,7 +109,6 @@ const bool WindowManager::process() {
 
 	// Bind singletons.
 	J_SINGLETON_SET(WindowManager, this);
-	J_SINGLETON_SET(ThreadPoolManager, &m_threadPool);
 	J_SINGLETON_SET(TimeManager, &m_time);
 	J_SINGLETON_SET(InputManager, &m_input);
 	J_SINGLETON_SET(DrawManager, &m_draw);
