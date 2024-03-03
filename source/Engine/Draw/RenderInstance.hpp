@@ -1,8 +1,8 @@
 #pragma once
-#include <NoisyTerrain/Core/Core.hpp>
+#include <Engine/Core/Core.hpp>
 
-#include <NoisyTerrain/Draw/InstanceData.hpp>
-#include <NoisyTerrain/Draw/Model.hpp>
+#include <Engine/Draw/InstanceData.hpp>
+#include <Engine/Draw/Model.hpp>
 
 class RenderInstance {
 private:

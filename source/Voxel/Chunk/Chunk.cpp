@@ -3,7 +3,7 @@
 #include <Voxel/Chunk/ChunkManager.hpp>
 #include <Voxel/VoxelManager.hpp>
 
-#include <NoisyTerrain/Draw/Draw.hpp>
+#include <Engine/Draw/Draw.hpp>
 
 Chunk::PlacementInformation::PlacementInformation(const VoxelID voxelID, const bool force) :
 	m_voxelID(voxelID), m_force(force) {}

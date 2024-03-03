@@ -1,12 +1,12 @@
 #pragma once
-#include <NoisyTerrain/Core/Core.hpp>
+#include <Engine/Core/Core.hpp>
 
-#include <NoisyTerrain/ThreadPool/ThreadPool.hpp>
-#include <NoisyTerrain/Time/Time.hpp>
-#include <NoisyTerrain/Input/Input.hpp>
-#include <NoisyTerrain/Draw/Draw.hpp>
+#include <Engine/ThreadPool/ThreadPool.hpp>
+#include <Engine/Time/Time.hpp>
+#include <Engine/Input/Input.hpp>
+#include <Engine/Draw/Draw.hpp>
 
-#include <NoisyTerrain/Entity/EntityManager.hpp>
+#include <Engine/Entity/EntityManager.hpp>
 
 class WindowManager {
 	J_SINGLETON(WindowManager)

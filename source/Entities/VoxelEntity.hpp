@@ -1,5 +1,5 @@
 #pragma once
-#include <NoisyTerrain/NoisyTerrain.hpp>
+#include <Engine/NoisyTerrain.hpp>
 
 #include <Entities/CameraEntity.hpp>
 #include <Voxel/VoxelManager.hpp>

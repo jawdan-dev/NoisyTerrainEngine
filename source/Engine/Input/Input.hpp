@@ -1,5 +1,5 @@
 #pragma once
-#include <NoisyTerrain/Core/Core.hpp>
+#include <Engine/Core/Core.hpp>
 
 class InputManager {
 	J_SINGLETON(InputManager)

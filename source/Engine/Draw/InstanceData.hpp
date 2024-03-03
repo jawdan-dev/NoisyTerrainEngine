@@ -1,7 +1,7 @@
 #pragma once
-#include <NoisyTerrain/Core/Core.hpp>
+#include <Engine/Core/Core.hpp>
 
-#include <NoisyTerrain/Draw/Shader.hpp>
+#include <Engine/Draw/Shader.hpp>
 
 class InstanceData {
 private:

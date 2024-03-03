@@ -5,5 +5,5 @@
  * --------------------------
  * Pretty much just a big library include :)
 */
-#include <NoisyTerrain/Draw/Texture.hpp>
-#include <NoisyTerrain/Window/Window.hpp>
+#include <Engine/Draw/Texture.hpp>
+#include <Engine/Window/Window.hpp>

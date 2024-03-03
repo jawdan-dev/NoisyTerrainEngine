@@ -1,12 +1,12 @@
 #pragma once
-#include <NoisyTerrain/Core/Core.hpp>
+#include <Engine/Core/Core.hpp>
 
 #include <Voxel/Types/VoxelLocation.hpp>
 #include <Voxel/Types/ChunkLocation.hpp>
 #include <Voxel/Layer/LayerReference.hpp>
 
-#include <NoisyTerrain/Draw/Model.hpp>
-#include <NoisyTerrain/Draw/InstanceData.hpp>
+#include <Engine/Draw/Model.hpp>
+#include <Engine/Draw/InstanceData.hpp>
 
 class ChunkManager;
 

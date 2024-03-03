@@ -1,5 +1,5 @@
 #pragma once
-#include <NoisyTerrain/NoisyTerrain.hpp>
+#include <Engine/NoisyTerrain.hpp>
 
 class CameraEntity : public Entity {
 public:

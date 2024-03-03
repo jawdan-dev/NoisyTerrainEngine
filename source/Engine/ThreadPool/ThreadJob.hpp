@@ -1,5 +1,5 @@
 #pragma once
-#include <NoisyTerrain/Core/Core.hpp>
+#include <Engine/Core/Core.hpp>
 
 typedef uint64_t ThreadJobID;
 static constexpr ThreadJobID ThreadJobID_INVALID = UINT64_MAX;

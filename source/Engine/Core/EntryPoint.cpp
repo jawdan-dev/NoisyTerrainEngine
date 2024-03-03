@@ -1,4 +1,4 @@
-#include <NoisyTerrain/NoisyTerrain.hpp>
+#include <Engine/NoisyTerrain.hpp>
 
 #include <Entities/CameraEntity.hpp>
 #include <Entities/VoxelEntity.hpp>

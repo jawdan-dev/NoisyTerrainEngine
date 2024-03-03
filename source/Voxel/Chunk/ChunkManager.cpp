@@ -1,7 +1,7 @@
 #include "ChunkManager.hpp"
 
-#include <NoisyTerrain/Time/Time.hpp>
-#include <NoisyTerrain/ThreadPool/ThreadPool.hpp>
+#include <Engine/Time/Time.hpp>
+#include <Engine/ThreadPool/ThreadPool.hpp>
 
 ChunkManager::ChunkManager(VoxelManager* const voxelManager) :
 	m_voxelManager(voxelManager),

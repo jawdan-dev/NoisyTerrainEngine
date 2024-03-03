@@ -1,7 +1,7 @@
 #pragma once
-#include <NoisyTerrain/Core/Core.hpp>
+#include <Engine/Core/Core.hpp>
 
-#include <NoisyTerrain/Draw/StaticData.hpp>
+#include <Engine/Draw/StaticData.hpp>
 
 class ModelMesh {
 private:

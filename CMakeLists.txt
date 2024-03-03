@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.7)
 project(NoisyTerrain)
 
 # Executable Declaration.
-add_executable(NoisyTerrain ${CMAKE_CURRENT_SOURCE_DIR}/source/NoisyTerrain/Core/EntryPoint.cpp)
+add_executable(NoisyTerrain ${CMAKE_CURRENT_SOURCE_DIR}/source/Engine/Core/EntryPoint.cpp)
 file(GLOB_RECURSE SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp)
 target_sources(NoisyTerrain PRIVATE ${SRC_FILES})
 

@@ -1,8 +1,8 @@
 #pragma once
-#include <NoisyTerrain/Core/Core.hpp>
+#include <Engine/Core/Core.hpp>
 
 #include <Voxel/Chunk/Chunk.hpp>
-#include <NoisyTerrain/ThreadPool/ThreadJob.hpp>
+#include <Engine/ThreadPool/ThreadJob.hpp>
 
 class VoxelManager;
 

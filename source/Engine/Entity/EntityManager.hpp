@@ -1,7 +1,7 @@
 #pragma once
-#include <NoisyTerrain/Core/Core.hpp>
+#include <Engine/Core/Core.hpp>
 
-#include <NoisyTerrain/Entity/Entity.hpp>
+#include <Engine/Entity/Entity.hpp>
 
 class EntityManager {
 private:

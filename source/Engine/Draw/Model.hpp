@@ -1,7 +1,7 @@
 #pragma once
-#include <NoisyTerrain/Core/Core.hpp>
+#include <Engine/Core/Core.hpp>
 
-#include <NoisyTerrain/Draw/Mesh.hpp>
+#include <Engine/Draw/Mesh.hpp>
 
 class Model {
 private:

@@ -1,7 +1,7 @@
 #pragma once
-#include <NoisyTerrain/Core/Core.hpp>
+#include <Engine/Core/Core.hpp>
 
-#include <NoisyTerrain/ThreadPool/ThreadJob.hpp>
+#include <Engine/ThreadPool/ThreadJob.hpp>
 
 class ThreadPoolManager {
 	J_SINGLETON(ThreadPoolManager)

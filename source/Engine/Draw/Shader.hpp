@@ -1,8 +1,8 @@
 #pragma once
-#include <NoisyTerrain/Core/Core.hpp>
+#include <Engine/Core/Core.hpp>
 
-#include <NoisyTerrain/Draw/ShaderAttribute.hpp>
-#include <NoisyTerrain/Draw/ShaderUniform.hpp>
+#include <Engine/Draw/ShaderAttribute.hpp>
+#include <Engine/Draw/ShaderUniform.hpp>
 
 class Shader {
 private:

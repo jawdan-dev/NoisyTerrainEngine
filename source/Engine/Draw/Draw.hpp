@@ -1,7 +1,7 @@
 #pragma once
-#include <NoisyTerrain/Core/Core.hpp>
+#include <Engine/Core/Core.hpp>
 
-#include <NoisyTerrain/Draw/RenderInstance.hpp>
+#include <Engine/Draw/RenderInstance.hpp>
 
 class DrawManager {
 	J_SINGLETON(DrawManager)
