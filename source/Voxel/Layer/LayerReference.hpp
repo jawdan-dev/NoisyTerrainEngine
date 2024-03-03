@@ -18,7 +18,7 @@ public:
 
 public:
 	J_GETTER_DIRECT(isValid, m_layerManager != nullptr && m_layer != nullptr, bool);
-	const VoxelID getVoxel(const VoxelInt x, const VoxelInt y) const;
+	const VoxelID getVoxel(const VoxelInt x, const VoxelInt z) const;
 	J_GETTER_DIRECT(getVoxelLayer, m_layer, Layer* const);
 	J_GETTER_DIRECT_MUT(getVoxelLayerManager, m_layerManager, LayerManager* const);
 

@@ -15,10 +15,10 @@ LayerReference::~LayerReference() {
 	if (isValid()) m_layerManager->removeLayerReference(*m_layer);
 }
 
-const VoxelID LayerReference::getVoxel(const VoxelInt x, const VoxelInt y) const {
+const VoxelID LayerReference::getVoxel(const VoxelInt x, const VoxelInt z) const {
 	// Return voxel ID.
 	if (!isValid()) return VoxelID::None;
-	return m_layer->getVoxel(x, y);
+	return m_layer->getVoxel(x, z);
 }
 
 LayerReference& LayerReference::operator =(const LayerReference& other) {

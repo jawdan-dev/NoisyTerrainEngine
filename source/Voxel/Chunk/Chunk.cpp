@@ -240,14 +240,14 @@ void Chunk::forcePlacement() {
 	Map<VoxelInt, Layer> newLayers;
 	for (auto it = m_placementQueue.begin(); it != m_placementQueue.end(); it++) {
 		// Get place information.
+		const PlacementInformation& placementInformation = it->second;
 		const VoxelLocation& location = it->first;
 		const LayerReference& layer = m_layers[location.y()];
-		const VoxelID existingVoxelID = layer.getVoxel(location.x(), location.y());
-		const PlacementInformation& placementInformation = it->second;
+		const VoxelID existingVoxelID = layer.getVoxel(location.x(), location.z());
 
 		// Ignore if same.
 		if (existingVoxelID == placementInformation.m_voxelID) continue;
-		// Ignore if not forced.
+		// Ignore if filled and not forced.
 		if (existingVoxelID != VoxelID::None && !placementInformation.m_force) continue;
 
 		// Get new layer.
@@ -565,7 +565,7 @@ void Chunk::forceRebuild() {
 						VoxelTextureIndex faceTextureIndex;
 						switch (scan[3]) {
 							// Top.
-							case 1: faceTextureIndex = !layerSide ? getVoxelTextureIndexTop(faceVoxelID) :  getVoxelTextureIndexBottom(faceVoxelID); break;
+							case 1: faceTextureIndex = !layerSide ? getVoxelTextureIndexTop(faceVoxelID) : getVoxelTextureIndexBottom(faceVoxelID); break;
 							// Sides.
 							case 0:
 							case 2: faceTextureIndex = getVoxelTextureIndexSide(faceVoxelID); break;
