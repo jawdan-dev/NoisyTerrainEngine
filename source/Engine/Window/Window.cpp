@@ -6,7 +6,7 @@ WindowManager::WindowManager() :
 	m_window(nullptr),
 	m_x(0), m_y(0), m_width(0), m_height(0),
 	m_threadPool("Window"), m_time(), m_input(), m_draw(),
-	m_entityManager() {
+	m_gameObjectManager() {
 	// Error logging.
 	glfwSetErrorCallback([](int errorCode, const char* description) {
 		J_ERROR("Window.cpp: GLFW Error %i: %s\n", errorCode, description);
@@ -116,9 +116,9 @@ const bool WindowManager::process() {
 	// Clear buffer.
 	m_draw.clear();
 
-	// Handle entities.
-	m_entityManager.processAll();
-	m_entityManager.drawAll();
+	// Handle game objects.
+	m_gameObjectManager.processAllGameObject();
+	m_gameObjectManager.drawAllGameObject();
 
 	// Draw.
 	m_draw.drawAll();

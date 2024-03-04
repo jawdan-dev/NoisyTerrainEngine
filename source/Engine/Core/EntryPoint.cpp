@@ -1,7 +1,7 @@
 #include <Engine/NoisyTerrain.hpp>
 
-#include <Entities/CameraEntity.hpp>
-#include <Entities/VoxelEntity.hpp>
+#include <GameObjects/CameraObject.hpp>
+#include <GameObjects/VoxelManagerObject.hpp>
 
 int main() {
 	printf("Wassup, 'Matrix.\n");
@@ -12,15 +12,15 @@ int main() {
 
 	// TODO: Scenes?
 	// Environment setup.
-	EntityManager& em = *window.getEntityManager();
-	em.addEntity(new CameraEntity);
-	em.addEntity(new VoxelEntity);
+	GameObjectManager& gom = *window.getGameObjectManager();
+	gom.addGameObject(new CameraObject);
+	gom.addGameObject(new VoxelManagerObject);
 
 	// Process.
 	while (window.process());
 
 	// Cleanup.
-	window.getEntityManager()->deleteAll();
+	window.getGameObjectManager()->deleteAllGameObject();
 
 	// Successful exit.
 	return EXIT_SUCCESS;

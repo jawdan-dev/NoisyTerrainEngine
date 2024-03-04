@@ -1,15 +1,13 @@
 #pragma once
 #include <Engine/NoisyTerrain.hpp>
 
-class CameraEntity : public Entity {
+class CameraObject : public GameObject {
 public:
-	static Vector3 activeCameraPosition;
+	void onInitialization() override {
+		setRotation(Vector3(0, 3.14159265358979f, 0));
+	}
 
-private:
-	Vector3 position = Vector3(0, 0, 1), rotation = Vector3(0, 3.14159265f, 0);
-
-public:
-	void onProcess() {
+	void onProcess() override {
 		const Vector3 moveAmount(
 			(Input.getKey(GLFW_KEY_D) ? 1.0f : 0.0f) - (Input.getKey(GLFW_KEY_A) ? 1.0f : 0.0f),
 			(Input.getKey(GLFW_KEY_SPACE) ? 1.0f : 0.0f) - (Input.getKey(GLFW_KEY_LEFT_CONTROL) ? 1.0f : 0.0f),
@@ -22,11 +20,12 @@ public:
 
 		if (moveAmount.lengthSquared() > 0 || lookAmount.lengthSquared() > 0) {
 			// Update position.
+			Vector3& position = getPosition(), & rotation = getRotation();
+
 			const float moveSpeed = Input.getKey(GLFW_KEY_LEFT_SHIFT) ? 50.0f : Input.getKey(GLFW_KEY_LEFT_ALT) ? 5.0f : 15.0f;
 			position.x() += ((Math::cos(rotation.y()) * moveAmount.x()) + (-Math::sin(rotation.y()) * moveAmount.z())) * moveSpeed * Time.delta();;
 			position.y() += moveAmount.y() * moveSpeed * Time.delta();
 			position.z() += ((-Math::sin(rotation.y()) * moveAmount.x()) + (-Math::cos(rotation.y()) * moveAmount.z())) * moveSpeed * Time.delta();;
-			activeCameraPosition = position;
 
 			// Update rotation.
 			rotation.x() += lookAmount.y() * Time.delta();
@@ -41,12 +40,10 @@ public:
 				0.1f, 10000.0f
 			)
 		);
-		Draw.setView(
-			Matrix4::rotation(-rotation) * Matrix4::translation(-position)
-		);
+		Draw.setView(getInverseTransformMatrix());
 	}
 
-	void onDraw() {
+	void onDraw() override {
 		// Debug view.
 		static bool lineMode = false;
 		if (Input.getKeyDown(GLFW_KEY_APOSTROPHE)) {
@@ -56,5 +53,3 @@ public:
 		}
 	}
 };
-
-Vector3 CameraEntity::activeCameraPosition;

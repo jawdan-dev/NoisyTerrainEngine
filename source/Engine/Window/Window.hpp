@@ -5,7 +5,7 @@
 #include <Engine/Input/Input.hpp>
 #include <Engine/Draw/Draw.hpp>
 
-#include <Engine/Entity/EntityManager.hpp>
+#include <Engine/GameObjects/GameObjectManager.hpp>
 
 class WindowManager {
 	J_SINGLETON(WindowManager)
@@ -19,7 +19,7 @@ private:
 	TimeManager m_time;
 	InputManager m_input;
 	DrawManager m_draw;
-	EntityManager m_entityManager;
+	GameObjectManager m_gameObjectManager;
 
 public:
 	WindowManager();
@@ -37,7 +37,7 @@ public:
 	J_GETTER_DIRECT_MUT(getTimeManager, &m_time, TimeManager* const);
 	J_GETTER_DIRECT_MUT(getInputManager, &m_input, InputManager* const);
 	J_GETTER_DIRECT_MUT(getDrawManager, &m_draw, DrawManager* const);
-	J_GETTER_DIRECT_MUT(getEntityManager, &m_entityManager, EntityManager* const);
+	J_GETTER_DIRECT_MUT(getGameObjectManager, &m_gameObjectManager, GameObjectManager* const);
 
 public:
 	J_SETTER_DIRECT(setTitle, const char* title, glfwSetWindowTitle(m_window, title));
