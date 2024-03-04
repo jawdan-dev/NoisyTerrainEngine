@@ -18,7 +18,13 @@ public:
 	void drawAll();
 
 public:
+	template <typename T, J_ENABLE_IF_BASE_OF(T, Entity)> T* const getFirstEntityOfType() const;
+	template <typename T, J_ENABLE_IF_BASE_OF(T, Entity)> const List<T*> getEntitiesOfType() const;
+
+public:
 	void addEntity(Entity* const entity);
 	void removeEntity(Entity* const entity);
 	void deleteAll();
 };
+
+#include "EntityManager.ipp"
