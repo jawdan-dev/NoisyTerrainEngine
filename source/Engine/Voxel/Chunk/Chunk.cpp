@@ -1,7 +1,7 @@
 #include "Chunk.hpp"
 
-#include <Voxel/Chunk/ChunkManager.hpp>
-#include <Voxel/VoxelManager.hpp>
+#include <Engine/Voxel/Chunk/ChunkManager.hpp>
+#include <Engine/Voxel/VoxelManager.hpp>
 
 #include <Engine/Draw/Draw.hpp>
 

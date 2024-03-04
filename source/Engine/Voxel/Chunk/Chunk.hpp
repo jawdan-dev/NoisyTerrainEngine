@@ -1,9 +1,9 @@
 #pragma once
 #include <Engine/Core/Core.hpp>
 
-#include <Voxel/Types/VoxelLocation.hpp>
-#include <Voxel/Types/ChunkLocation.hpp>
-#include <Voxel/Layer/LayerReference.hpp>
+#include <Engine/Voxel/Types/VoxelLocation.hpp>
+#include <Engine/Voxel/Types/ChunkLocation.hpp>
+#include <Engine/Voxel/Layer/LayerReference.hpp>
 
 #include <Engine/Draw/Model.hpp>
 #include <Engine/Draw/InstanceData.hpp>

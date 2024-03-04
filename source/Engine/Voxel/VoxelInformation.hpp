@@ -1,7 +1,7 @@
 #pragma once
 #include <Engine/Core/Core.hpp>
 
-#include <Voxel/Types/VoxelInt.hpp>
+#include <Engine/Voxel/Types/VoxelInt.hpp>
 
 //////////////////////////////////////////////////////////////////////////////////////
 

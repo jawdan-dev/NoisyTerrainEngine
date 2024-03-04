@@ -1,7 +1,7 @@
 #include "ChunkLocation.hpp"
 
-#include <Voxel/VoxelInformation.hpp>
-#include <Voxel/Types/VoxelLocation.hpp>
+#include <Engine/Voxel/VoxelInformation.hpp>
+#include <Engine/Voxel/Types/VoxelLocation.hpp>
 
 ChunkLocation::ChunkLocation() : ChunkLocation(0, 0) {}
 ChunkLocation::ChunkLocation(const VoxelInt x, const VoxelInt z) :

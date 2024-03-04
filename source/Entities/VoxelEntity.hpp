@@ -2,7 +2,7 @@
 #include <Engine/NoisyTerrain.hpp>
 
 #include <Entities/CameraEntity.hpp>
-#include <Voxel/VoxelManager.hpp>
+#include <Engine/Voxel/VoxelManager.hpp>
 
 class VoxelEntity : public Entity {
 private:
@@ -18,6 +18,10 @@ public:
 		m_voxelManager(),
 		m_terrainShader("TerrainShader.glsl"),
 		m_terrainAtlas("TerrainTexture.bmp") {}
+
+public:
+	J_GETTER_DIRECT_MUT(getVoxelManager, &m_voxelManager, VoxelManager* const);
+	J_GETTER_DIRECT_MUT(getChunkManager, m_voxelManager.getChunkManager(), ChunkManager* const);
 
 public:
 	void onReady() {

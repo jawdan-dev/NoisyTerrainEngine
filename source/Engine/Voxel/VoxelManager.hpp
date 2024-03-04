@@ -1,8 +1,8 @@
 #pragma once
 #include <Engine/Core/Core.hpp>
 
-#include <Voxel/Chunk/ChunkManager.hpp>
-#include <Voxel/Layer/LayerManager.hpp>
+#include <Engine/Voxel/Chunk/ChunkManager.hpp>
+#include <Engine/Voxel/Layer/LayerManager.hpp>
 
 class VoxelManager {
 private:

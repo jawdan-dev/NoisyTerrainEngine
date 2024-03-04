@@ -1,7 +1,7 @@
 #pragma once
 #include <Engine/Core/Core.hpp>
 
-#include <Voxel/VoxelInformation.hpp>
+#include <Engine/Voxel/VoxelInformation.hpp>
 
 typedef uint32_t VoxelLayerSegmentInt;
 struct LayerSegment {

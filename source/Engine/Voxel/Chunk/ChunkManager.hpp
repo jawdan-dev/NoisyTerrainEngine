@@ -1,7 +1,7 @@
 #pragma once
 #include <Engine/Core/Core.hpp>
 
-#include <Voxel/Chunk/Chunk.hpp>
+#include <Engine/Voxel/Chunk/Chunk.hpp>
 
 class VoxelManager;
 
