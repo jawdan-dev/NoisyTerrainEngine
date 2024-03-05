@@ -1,7 +1,7 @@
 #pragma once
 #include <Engine/Core/Core.hpp>
 
-#include <Engine/Draw/Mesh.hpp>
+#include <Engine/Draw/Model/ModelMesh.hpp>
 
 class Model {
 private:
