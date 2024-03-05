@@ -5,5 +5,7 @@
  * --------------------------
  * Pretty much just a big library include :)
 */
-#include <Engine/Draw/Texture/Texture.hpp>
 #include <Engine/Window/Window.hpp>
+#include <Engine/Draw/Texture/Texture.hpp>
+#include <Engine/Collision/ColliderCube.hpp>
+#include <Engine/Collision/ColliderSphere.hpp>

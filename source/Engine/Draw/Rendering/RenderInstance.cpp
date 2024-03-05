@@ -163,6 +163,10 @@ void RenderInstance::draw(const Matrix4& viewProjection) {
 		glUseProgram(m_shader->getProgram());
 		glBindVertexArray(m_vao);
 
+		// Set view projection.
+		const ShaderUniform* const u_viewProjection = m_shader->getUniform("u_viewProjection");
+		if (u_viewProjection != nullptr) glUniformMatrix4fv(u_viewProjection->m_location, 1, GL_FALSE, viewProjection.getData());
+
 		// Draw.
 		if (mesh.getIndicesEnabled()) {
 			// Draw indices instanced.
