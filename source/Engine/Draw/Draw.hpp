@@ -1,7 +1,7 @@
 #pragma once
 #include <Engine/Core/Core.hpp>
 
-#include <Engine/Draw/RenderInstance.hpp>
+#include <Engine/Draw/Rendering/RenderInstance.hpp>
 
 class DrawManager {
 	J_SINGLETON(DrawManager)
