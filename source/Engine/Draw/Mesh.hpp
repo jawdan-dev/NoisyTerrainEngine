@@ -25,6 +25,7 @@ public:
 	~ModelMesh();
 
 public:
+	J_GETTER_DIRECT(hasUpdated, m_updated, bool);
 	J_GETTER_DIRECT(getVBO, m_VBO, GLuint);
 	J_GETTER_DIRECT(getEBO, m_EBO, GLuint);
 	J_GETTER_DIRECT(getRenderCount, m_renderCount, size_t);

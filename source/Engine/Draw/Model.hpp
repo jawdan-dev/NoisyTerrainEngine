@@ -24,11 +24,14 @@ public:
 	J_GETTER_DIRECT_MUT(getInactiveMesh, m_meshes[getInactiveIndex()], ModelMesh&);
 
 public:
-	void load(const char* file);
+	void load(const char* filePath);
 	const bool upload(const size_t uploadMax = SIZE_MAX);
 
 public:
 	const bool tryLock();
 	void lock();
 	void unlock();
+
+private:
+	void loadOBJ(FILE* const file, ModelMesh& mesh);
 };

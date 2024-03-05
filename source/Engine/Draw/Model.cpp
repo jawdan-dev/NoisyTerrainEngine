@@ -5,9 +5,40 @@ Model::Model() :
 	m_activeMesh(s_maxBuffers - 1) {}
 Model::~Model() {}
 
-void Model::load(const char* file) {
-	// TODO:
-	J_ERROR_EXIT("Model.cpp: Model loading not yet implemented.\n");
+void Model::load(const char* filePath) {
+	// Macro for switching a 4 character file extension.
+#	define EXTENSION(str) ( \
+		(uint64_t)str[0] << 0 | (uint64_t)str[1] << 16 |  \
+		(uint64_t)str[2] << 32 | (uint64_t)str[3] << 48)
+
+	// Get file extension.
+	if (strlen(filePath) <= 4) J_ERROR_EXIT("Model.cpp: File path is too short.\n");
+	const String filePathStr = String("Assets/") + filePath;
+	const String extensionString = filePathStr.substr(filePathStr.size() - 4);
+	const uint64_t extension = EXTENSION(extensionString.c_str());
+
+	// Open file.
+	FILE* const file = fopen(filePathStr.c_str(), "rb");
+	if (file == nullptr) J_ERROR_EXIT("Model.cpp: Failed to open %s\n", filePath);
+
+	// Get mesh to update.
+	ModelMesh& mesh = getInactiveMesh();
+	mesh.lock();
+	mesh.clear();
+
+	// Load.
+	switch (extension) {
+		default: J_WARNING("Model.cpp: File extension '%s' not supported\n", extensionString.c_str()); break;
+		case EXTENSION(".obj"): loadOBJ(file, mesh); break;
+	}
+
+	// Error check.
+	if (!mesh.hasUpdated()) J_ERROR("Model.cpp: Failed to load model %s.\n", filePath);
+
+	// Cleanup.
+	mesh.unlock();
+	fclose(file);
+#	undef EXTENSION
 }
 const bool Model::upload(const size_t uploadMax) {
 	// Get mesh.
