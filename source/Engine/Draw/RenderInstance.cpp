@@ -15,100 +15,16 @@ RenderInstance::~RenderInstance() {
 	if (m_instanceData != nullptr) free(m_instanceData);
 }
 
-const bool resize(void*& currentData, size_t& currentDataCount, const size_t dataCount, const size_t dataSize) {
-	if (currentDataCount > dataCount || dataCount == 0) return true;
-
-	// Get new target size.
-	const size_t newSize = Math::binarySize(dataCount) * dataSize;
-
-	// Realloc data.
-	void* newData = realloc(currentData, newSize);
-	if (newData == nullptr) {
-		J_WARNING("RenderInstance.cpp: Failed to realloc render instances to %zu bytes\n", newSize);
-		return false;
-	}
-
-	// Update details.
-	currentData = newData;
-	currentDataCount = dataCount;
-	return true;
-}
-const bool insertData(
-	void* const data, const size_t dataCount, const size_t dataSize,
-	void* const newData, const size_t index
-) {
-	// Make sure its either inside or on the end.
-	if (index > dataCount)
-		return insertData(data, dataCount, dataSize, newData, dataCount);
-
-	// Insert data.
-	if (index == dataCount) {
-		// Data location.
-		void* const targetData = (void*)((uintptr_t)data + (index * dataSize));
-		// Compare data.
-		if (memcmp(targetData, newData, dataSize)) {
-			// Update data.
-			memcpy(targetData, newData, dataSize);
-			return true;
-		}
-	} else {
-		// Data location.
-		void* const targetData = (void*)((uintptr_t)data + ((index + 1) * dataSize));
-		void* const sourceData = (void*)((uintptr_t)data + (index * dataSize));
-		const size_t moveLength = dataCount - (index + 1);
-
-		// Move data.
-		if (moveLength > 0)
-			memmove(targetData, sourceData, moveLength);
-
-		// Insert new data.
-		memcpy(sourceData, newData, dataSize);
-		return true;
-	}
-
-	// No changes made.
-	return false;
-}
-const bool removeData(
-	void* const data, const size_t dataCount, const size_t dataSize,
-	const size_t index
-) {
-	// Make sure its either inside or on the end.
-	if (index >= dataCount) return false;
-
-	// Data location.
-	void* const targetData = (void*)((uintptr_t)data + (index * dataSize));
-	void* const sourceData = (void*)((uintptr_t)data + ((index + 1) * dataSize));
-	const size_t moveLength = dataCount - (index + 1);
-
-	// Move data.
-	if (moveLength > 0)
-		memmove(targetData, sourceData, moveLength);
-
-	return true;
-}
-
 void RenderInstance::addInstance(InstanceData& instanceData, const void* const staticID) {
-	if (instanceData.getShader() != m_shader ||
-		!resize(m_instanceData, m_instanceDataCount, m_instanceCount + 1, m_shader->getTotalInstanceSize())) return;
+	if (instanceData.getShader() != m_shader || !resize(m_instanceCount + 1)) return;
 
-	if (staticID == nullptr) {
-		// Insert instance data.
-		if (insertData(
-			m_instanceData, m_instanceDataCount, m_shader->getTotalInstanceSize(),
-			instanceData.getData(), m_instanceDataCount
-		)) {
-			m_instancesUpdated = true;
-		}
-	} else {
+	if (staticID) {
 		// Insert static data.
-		if (insertData(
-			m_instanceData, m_instanceDataCount, m_shader->getTotalInstanceSize(),
-			instanceData.getData(), m_staticInstances.size()
-		)) {
-			m_staticInstances.push_back(staticID);
-			m_instancesUpdated = true;
-		}
+		if (insert(m_staticInstances.size(), instanceData.getData())) m_instancesUpdated = true;
+		m_staticInstances.push_back(staticID);
+	} else {
+		// Insert instance data.
+		if (insert(m_instanceCount, instanceData.getData())) m_instancesUpdated = true;
 	}
 
 	// Update details.
@@ -120,8 +36,8 @@ void RenderInstance::removeStaticInstance(const void* const staticID) {
 	for (size_t i = 0; i < m_staticInstances.size(); i++) {
 		if (m_staticInstances[i] != staticID) continue;
 
-		// Remve data.
-		if (removeData(m_instanceData, m_instanceCount, m_shader->getTotalInstanceSize(), i)) {
+		// Remove data.
+		if (remove(i)) {
 			m_instancesUpdated = true;
 			m_instanceCount--;
 		}
@@ -206,8 +122,9 @@ void RenderInstance::updateVAO(ModelMesh& mesh) {
 		glEnableVertexAttribArray(attribute.m_location);
 	}
 
-	// Unbind VAO.
+	// Unbind vao + buffers.
 	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// Update details.
 	m_modelUpdated = false;
@@ -276,4 +193,68 @@ void RenderInstance::draw(const Matrix4& viewProjection) {
 void RenderInstance::clear() {
 	// Clear instances.
 	m_instanceCount = m_staticInstances.size();
+}
+
+const bool RenderInstance::resize(const size_t dataCount) {
+	if (dataCount == 0 || m_instanceDataCount >= dataCount) return true;
+
+	// Get new target size.
+	const size_t newSize = Math::binarySize(dataCount) * m_shader->getTotalInstanceSize();
+
+	// Realloc data.
+	void* newData = realloc(m_instanceData, newSize);
+	if (newData == nullptr) {
+		J_WARNING("RenderInstance.cpp: Failed to realloc render instances to %zu bytes\n", newSize);
+		return false;
+	}
+
+	// Update details.
+	m_instanceData = newData;
+	m_instanceDataCount = dataCount;
+	return true;
+}
+const bool RenderInstance::insert(const size_t index, void* const data) {
+	// Insert data.
+	const size_t dataSize = m_shader->getTotalInstanceSize();
+	if (index >= m_instanceCount) {
+		// Data location.
+		void* const targetData = (void*)((uintptr_t)m_instanceData + (m_instanceCount * dataSize));
+		// Compare data.
+		if (memcmp(targetData, data, dataSize)) {
+			// Update data.
+			memcpy(targetData, data, dataSize);
+			return true;
+		}
+	} else {
+		// Data location.
+		void* const targetData = (void*)((uintptr_t)m_instanceData + ((index + 1) * dataSize));
+		void* const sourceData = (void*)((uintptr_t)m_instanceData + (index * dataSize));
+		const size_t moveLength = m_instanceCount - (index + 1);
+
+		// Move data.
+		if (moveLength > 0) memmove(targetData, sourceData, moveLength);
+
+		// Insert new data.
+		memcpy(sourceData, data, dataSize);
+		return true;
+	}
+
+	// No changes made.
+	return false;
+}
+const bool RenderInstance::remove(const size_t index) {
+	// Make sure its either inside or on the end.
+	if (index >= m_instanceDataCount) return false;
+
+	// Data location.
+	const size_t dataSize = m_shader->getTotalInstanceSize();
+	void* const targetData = (void*)((uintptr_t)m_instanceData + (index * dataSize));
+	void* const sourceData = (void*)((uintptr_t)m_instanceData + ((index + 1) * dataSize));
+	const size_t moveLength = m_instanceDataCount - (index + 1);
+
+	// Move data.
+	if (moveLength > 0)
+		memmove(targetData, sourceData, moveLength);
+
+	return true;
 }

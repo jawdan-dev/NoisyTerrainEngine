@@ -43,4 +43,9 @@ private:
 public:
 	void draw(const Matrix4& viewProjection);
 	void clear();
+
+private:
+	const bool resize(const size_t dataCount);
+	const bool insert(const size_t index, void* const data);
+	const bool remove(const size_t index);
 };
