@@ -9,9 +9,9 @@ VoxelLocation::VoxelLocation(const VoxelInt x, const VoxelInt y, const VoxelInt 
 
 const VoxelLocation VoxelLocation::getRelativeLocation() const {
 	return VoxelLocation(
-		mod(m_x, voxelChunkSizeX),
-		mod(m_y, voxelChunkSizeY),
-		mod(m_z, voxelChunkSizeZ)
+		Math::mod(m_x, voxelChunkSizeX),
+		Math::mod(m_y, voxelChunkSizeY),
+		Math::mod(m_z, voxelChunkSizeZ)
 	);
 }
 
@@ -51,7 +51,7 @@ const bool VoxelLocation::operator !=(const VoxelLocation& other) const {
 
 VoxelLocation::operator ChunkLocation() const {
 	return ChunkLocation(
-		(m_x - mod(m_x, voxelChunkSizeX)) / voxelChunkSizeX,
-		(m_z - mod(m_z, voxelChunkSizeZ)) / voxelChunkSizeZ
+		(m_x - Math::mod(m_x, voxelChunkSizeX)) / voxelChunkSizeX,
+		(m_z - Math::mod(m_z, voxelChunkSizeZ)) / voxelChunkSizeZ
 	);
 }
