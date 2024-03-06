@@ -10,7 +10,7 @@ VoxelLocation::VoxelLocation(const VoxelInt x, const VoxelInt y, const VoxelInt 
 const VoxelLocation VoxelLocation::getRelativeLocation() const {
 	return VoxelLocation(
 		Math::mod(m_x, voxelChunkSizeX),
-		Math::mod(m_y, voxelChunkSizeY),
+		m_y,
 		Math::mod(m_z, voxelChunkSizeZ)
 	);
 }
