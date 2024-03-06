@@ -1,8 +1,8 @@
 #pragma once
 #include <Engine/Core/Core.hpp>
 
-#include <Engine/Draw/InstanceData.hpp>
-#include <Engine/Draw/Model.hpp>
+#include <Engine/Draw/Rendering/InstanceData.hpp>
+#include <Engine/Draw/Model/Model.hpp>
 
 class RenderInstance {
 private:

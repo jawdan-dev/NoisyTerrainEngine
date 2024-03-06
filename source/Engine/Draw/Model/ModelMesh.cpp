@@ -1,4 +1,4 @@
-#include "Mesh.hpp"
+#include "ModelMesh.hpp"
 
 ModelMesh::ModelMesh() :
 	m_mutex(),

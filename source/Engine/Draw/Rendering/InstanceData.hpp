@@ -1,7 +1,7 @@
 #pragma once
 #include <Engine/Core/Core.hpp>
 
-#include <Engine/Draw/Shader.hpp>
+#include <Engine/Draw/Shader/Shader.hpp>
 
 class InstanceData {
 private:

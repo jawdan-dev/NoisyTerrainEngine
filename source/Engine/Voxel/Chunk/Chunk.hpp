@@ -5,8 +5,8 @@
 #include <Engine/Voxel/Types/ChunkLocation.hpp>
 #include <Engine/Voxel/Layer/LayerReference.hpp>
 
-#include <Engine/Draw/Model.hpp>
-#include <Engine/Draw/InstanceData.hpp>
+#include <Engine/Draw/Model/Model.hpp>
+#include <Engine/Draw/Rendering/InstanceData.hpp>
 
 class ChunkManager;
 

@@ -1,7 +1,7 @@
 #pragma once
 #include <Engine/Core/Core.hpp>
 
-#include <Engine/Draw/StaticData.hpp>
+#include <Engine/Draw/Model/StaticData.hpp>
 
 class ModelMesh {
 private:
@@ -49,4 +49,4 @@ public:
 	void unlock();
 };
 
-#include "Mesh.ipp"
+#include "ModelMesh.ipp"

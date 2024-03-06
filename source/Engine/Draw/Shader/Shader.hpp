@@ -1,8 +1,8 @@
 #pragma once
 #include <Engine/Core/Core.hpp>
 
-#include <Engine/Draw/ShaderAttribute.hpp>
-#include <Engine/Draw/ShaderUniform.hpp>
+#include <Engine/Draw/Shader/ShaderAttribute.hpp>
+#include <Engine/Draw/Shader/ShaderUniform.hpp>
 
 class Shader {
 private:
