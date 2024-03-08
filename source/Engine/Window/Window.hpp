@@ -14,6 +14,7 @@ class WindowManager {
 private:
 	GLFWwindow* m_window;
 	int m_x, m_y, m_width, m_height;
+	bool m_isFocused;
 
 	ThreadPoolManager m_threadPool;
 	TimeManager m_time;
@@ -32,6 +33,7 @@ public:
 	J_GETTER_DIRECT(getY, m_y, int);
 	J_GETTER_DIRECT(getWidth, m_width, int);
 	J_GETTER_DIRECT(getHeight, m_height, int);
+	J_GETTER_DIRECT(isFocused, m_isFocused, bool);
 
 	J_GETTER_DIRECT_MUT(getThreadPool, &m_threadPool, ThreadPoolManager* const);
 	J_GETTER_DIRECT_MUT(getTimeManager, &m_time, TimeManager* const);

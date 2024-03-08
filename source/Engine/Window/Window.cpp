@@ -5,6 +5,7 @@ J_SINGLETON_DEF(WindowManager);
 WindowManager::WindowManager() :
 	m_window(nullptr),
 	m_x(0), m_y(0), m_width(0), m_height(0),
+	m_isFocused(false),
 	m_threadPool("Window"), m_time(), m_input(), m_draw(),
 	m_gameObjectManager() {
 	// Error logging.
@@ -64,6 +65,10 @@ WindowManager::WindowManager() :
 		glfwMakeContextCurrent(_);
 		glViewport(0, 0, width, height);
 		});
+	glfwSetWindowFocusCallback(m_window, [](GLFWwindow* const _, const int focused) {
+		WindowManager* const window = (WindowManager*)glfwGetWindowUserPointer(_);
+		window->m_isFocused = focused == GLFW_TRUE;
+	});
 
 	glfwSetKeyCallback(m_window, [](GLFWwindow* const _, const int key, const int scancode, const int action, const int mods) {
 		WindowManager* const window = (WindowManager*)glfwGetWindowUserPointer(_);
