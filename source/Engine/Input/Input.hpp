@@ -6,10 +6,10 @@ class InputManager {
 #	define Input J_SINGLETON_GET(InputManager)
 
 private:
-	int m_mouseX, m_mouseY, m_mouseScrollX, m_mouseScrollY;
 	Set<GLenum>
 		m_keyDown, m_keyRepeat, m_keyPressed, m_keyUp,
 		m_mouseDown, m_mousePressed, m_mouseUp;
+	int m_mouseX, m_mouseY, m_mouseScrollX, m_mouseScrollY;
 
 public:
 	InputManager();

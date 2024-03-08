@@ -3,9 +3,9 @@
 J_SINGLETON_DEF(InputManager);
 
 InputManager::InputManager() :
-	m_mouseX(0), m_mouseY(0), m_mouseScrollX(0), m_mouseScrollY(0),
 	m_keyDown(), m_keyRepeat(), m_keyPressed(), m_keyUp(),
-	m_mouseDown(), m_mousePressed(), m_mouseUp() {}
+	m_mouseDown(), m_mousePressed(), m_mouseUp(),
+	m_mouseX(0), m_mouseY(0), m_mouseScrollX(0), m_mouseScrollY(0) {}
 InputManager::~InputManager() {}
 
 void InputManager::process() {
@@ -17,6 +17,8 @@ void InputManager::process() {
 	// Mouse clear.
 	m_mouseDown.clear();
 	m_mouseUp.clear();
+	m_mouseScrollX = 0;
+	m_mouseScrollY = 0;
 }
 
 const bool InputManager::getKeyDown(const GLenum key) {
