@@ -2,6 +2,7 @@
 
 #include <GameObjects/CameraObject.hpp>
 #include <GameObjects/VoxelManagerObject.hpp>
+#include <GameObjects/Entities/PlayerObject.hpp>
 
 int main() {
 	printf("Wassup, 'Matrix.\n");
@@ -13,8 +14,9 @@ int main() {
 	// TODO: Scenes?
 	// Environment setup.
 	GameObjectManager& gom = *window.getGameObjectManager();
-	gom.addGameObject(new CameraObject);
 	gom.addGameObject(new VoxelManagerObject);
+	gom.addGameObject(new PlayerObject);
+	gom.addGameObject(new CameraObject);
 
 	// Process.
 	while (window.process());
