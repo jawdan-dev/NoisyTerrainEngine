@@ -50,6 +50,80 @@ Chunk* const ChunkManager::getChunk(const ChunkLocation& location) {
 	// Return chunk.
 	return &it->second;
 }
+const float ChunkManager::getRayDistance(const Vector3& origin, const Vector3& direction, const float maxDistance) {
+	// Based on paper 'A Fast Voxel Traversal Algorithm for Ray Tracing' http://www.cse.yorku.ca/~amana/research/grid.pdf.
+
+	// Verify args.
+	if (direction.lengthSquared() <= 0.0f) return maxDistance;
+
+	// Voxel information.
+	VoxelLocation voxelLocation(Math::floor(origin.x()), Math::floor(origin.y()), Math::floor(origin.z()));
+	const VoxelLocation voxelStep(
+		(direction.x() > 0.0f) ? 1 : -1,
+		(direction.y() > 0.0f) ? 1 : -1,
+		(direction.z() > 0.0f) ? 1 : -1
+	);
+
+	// Get marching information.
+	const Vector3 distanceDelta(
+		direction.x() != 0.0f ? Math::abs(1.0f / direction.x()) : -1.0f,
+		direction.y() != 0.0f ? Math::abs(1.0f / direction.y()) : -1.0f,
+		direction.z() != 0.0f ? Math::abs(1.0f / direction.z()) : -1.0f
+	);
+	const Vector3 distanceOffset(
+	   (voxelStep.x() > 0) ? ((float)voxelLocation.x() + 1.0f - origin.x()) : (origin.x() - voxelLocation.x()),
+	   (voxelStep.y() > 0) ? ((float)voxelLocation.y() + 1.0f - origin.y()) : (origin.y() - voxelLocation.y()),
+	   (voxelStep.z() > 0) ? ((float)voxelLocation.z() + 1.0f - origin.z()) : (origin.z() - voxelLocation.z())
+	);
+	Vector3 distanceMax(
+	  (distanceDelta.x() >= 0.0f) ? (distanceDelta.x() * distanceOffset.x()) : (maxDistance + 1.0f),
+	  (distanceDelta.y() >= 0.0f) ? (distanceDelta.y() * distanceOffset.y()) : (maxDistance + 1.0f),
+	  (distanceDelta.z() >= 0.0f) ? (distanceDelta.z() * distanceOffset.z()) : (maxDistance + 1.0f)
+	);
+
+	// March ray.
+	float distance = 0.0f;
+	size_t lastSteppedIndex = SIZE_MAX;
+	while (distance <= maxDistance) {
+		// Check for voxel.
+		const VoxelID voxel = getVoxel(voxelLocation);
+		if (voxel != VoxelID::None) return distance;
+
+		//Advance distance to next boundary.
+		if (distanceMax.x() < distanceMax.y()) {
+			if (distanceMax.x() < distanceMax.z()) {
+				// March to x bound.
+				voxelLocation.x() += voxelStep.x();
+				distance = distanceMax.x();
+				distanceMax.x() += distanceDelta.x();
+				lastSteppedIndex = 0;
+			} else {
+				// March to z bound.
+				voxelLocation.z() += voxelStep.z();
+				distance = distanceMax.z();
+				distanceMax.z() += distanceDelta.z();
+				lastSteppedIndex = 2;
+			}
+		} else {
+			if (distanceMax.y() < distanceMax.z()) {
+				// March to y bound.
+				voxelLocation.y() += voxelStep.y();
+				distance = distanceMax.y();
+				distanceMax.y() += distanceDelta.y();
+				lastSteppedIndex = 1;
+			} else {
+				// March to z bound.
+				voxelLocation.z() += voxelStep.z();
+				distance = distanceMax.z();
+				distanceMax.z() += distanceDelta.z();
+				lastSteppedIndex = 2;
+			}
+		}
+	}
+
+	// No voxel hit.
+	return maxDistance;
+}
 
 void ChunkManager::trySetVoxel(const VoxelLocation& location, const VoxelID voxelID, const bool queue) {
 	// Get chunk.

@@ -58,6 +58,7 @@ public:
 	J_GETTER_DIRECT_MUT(getVoxelManager, m_voxelManager, VoxelManager* const);
 	const VoxelID getVoxel(const VoxelLocation& location);
 	Chunk* const getChunk(const ChunkLocation& location);
+	const float getRayDistance(const Vector3& origin, const Vector3& direction, const float maxDistance);
 
 public:
 	void trySetVoxel(const VoxelLocation& location, const VoxelID voxelID, const bool queue = true);
