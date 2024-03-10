@@ -2,6 +2,7 @@
 #include <Engine/NoisyTerrain.hpp>
 
 #include <Engine/GameObjects/GameObject.hpp>
+#include <GameObjects/Entities/EntityBody.hpp>
 
 class EntityObjectBase : public GameObject {
 private:
@@ -22,8 +23,11 @@ private:
 	float m_gravityMultiplier;
 	bool m_onGround, m_onWall;
 
+private:
+	EntityBody* m_entityBody;
+
 public:
-	EntityObjectBase(const ColliderCube& environmentCollider);
+	EntityObjectBase(const ColliderCube& environmentCollider, EntityBody* const entityBody = nullptr);
 	EntityObjectBase(const EntityObjectBase& other) = delete;
 	virtual ~EntityObjectBase();
 

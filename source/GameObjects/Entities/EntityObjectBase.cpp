@@ -2,10 +2,11 @@
 
 #include <GameObjects/VoxelManagerObject.hpp>
 
-EntityObjectBase::EntityObjectBase(const ColliderCube& environmentCollider) :
+EntityObjectBase::EntityObjectBase(const ColliderCube& environmentCollider, EntityBody* const entityBody) :
 	m_environmentCollider(environmentCollider),
 	m_velocity(0.0f, 0.0f, 0.0f), m_safeVelocity(0.0f, 0.0f, 0.0f), m_gravityMultiplier(1.0f),
-	m_onGround(false), m_onWall(false) {}
+	m_onGround(false), m_onWall(false),
+	m_entityBody(entityBody) {}
 EntityObjectBase::~EntityObjectBase() {}
 
 void EntityObjectBase::onProcess() {
@@ -163,6 +164,7 @@ void EntityObjectBase::onProcess() {
 
 void EntityObjectBase::onDraw() {
 	drawColliders();
+	if (m_entityBody != nullptr) m_entityBody->draw(getPosition());
 }
 void EntityObjectBase::drawColliders() const {
 	// Draw colliders.
