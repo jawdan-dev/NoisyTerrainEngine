@@ -4,6 +4,7 @@
 class CameraObject : public GameObject {
 public:
 	void onInitialization() override {
+		setPosition(Vector3(0, 132, 0));
 		setRotation(Vector3(0, 3.14159265358979f, 0));
 	}
 
