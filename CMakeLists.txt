@@ -62,3 +62,6 @@ target_link_libraries(NoisyTerrain PRIVATE libglew_static)
 # OpenGL.
 find_package(OpenGL REQUIRED)
 target_link_libraries(NoisyTerrain PRIVATE OpenGL::GL)
+
+# Strip.
+target_link_libraries(NoisyTerrain PRIVATE -s)
