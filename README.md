@@ -12,23 +12,31 @@ This is an unnamed voxel engine project. It is made with `C++`, albeit rather `C
 
 The primary use case for this project is experimentation and for potential use in game jams.
 
+### Controls
+
+| Name           | Binding            |
+| -------------- | ------------------ |
+| Movement       | WASD, Space, Shift |
+| Camera Look    | Arrow Keys         |
+| Wireframe View | Apostrophe         |
+
 ### Architecture
 
 ```
-└── binaries
-	└── build* (Holds the output binaries for the target platform)
+└── binaries (Local)
+	└── [build-platform] (Holds the output binaries for the targeted platform)
 └── modules
 	└── ...
 	└── JLib (Custom library with simple helpers & libraries)
 └── source
     └── Assets (Will be moved or compiled into the final target binary file or folder)
-	└── Entities
 	└── Engine (The underlying simple game engine)
+	└── GameObjects (The custom objects in the game)
 ```
 
 ### Compiling
 
-The project will be compiled and released using `MinGW GCC 8.1.0` and may not support other compilers or versions. This may happen in the future but there are no intentions yet, mainly due to the experimental nature of the project.
+The project will be compiled and released using `MinGW GCC 13.2.0` and may not support other compilers or versions. This may happen in the future but there are no intentions yet, mainly due to the experimental nature of the project.
 
 ## Gallery
 
